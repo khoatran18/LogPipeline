@@ -1,0 +1,96 @@
+sources:
+  source_id_1:
+    type: kafka
+    bootstrap_servers: broker1:29092,broker2:29092,broker3:29092
+    group_id: test1
+    topics:
+      - error_log
+    auto_offset_reset: earliest
+    decoding:
+      codec: bytes
+    drain_timeout_ms: 2500
+    fetch_wait_max_ms: 100
+
+transforms:
+  transform_id_1:
+    type: remap
+    inputs:
+      - source_id_1
+    drop_on_abort: true
+    source: |
+      .message = decode_charset!(.message, "utf-8")
+      .check = "health"
+      check1 = parse_regex!(.message, r'(?P<timestamp>[^\[]+)\[(?P<level>\w+)\] (?P<pid>\d+)#(?P<tid>\d+)\: \*(?P<request_id>\d+) (?P<error_message>[^,]+), client\: (?P<ip>.+)')
+      check2 = parse_regex!(check1.error_message, r'(?P<action>\w+)[^\"]+\"(?P<file_path>[^\"]+)\"[^\(]+\((?P<errno>\d+).+')
+      .timestamp = check1.timestamp
+      .level = check1.level
+      .pid = check1.pid
+      .tid = check1.tid
+      .request_id = check1.request_id
+      .ip = check1.ip
+      .error_message = check1.error_message
+      .log_debug = check1
+      .action = check2.action
+      .file_path = check2.file_path
+      .errno = check2.errno
+      # "send() \"/opt/app/storage/logs/laravel.log\" aborted (32: Broken pipe)"
+
+  transform_route_1:
+    type: exclusive_route
+    inputs:
+      - transform_id_1
+    routes:
+      - name: "reduce"
+        condition:
+          type: vrl
+          source: |
+            important_levels = ["crit", "error", "alert"]
+            check = true
+            for_each(important_levels) -> |_, level| {
+              if (.level == level) {
+                check = false
+              }
+            }
+            check
+      - name: "dangerous"
+        condition:
+          type: vrl
+          source: |
+            true
+      
+
+sinks:
+  console_output:
+    type: console
+    inputs:
+      - transform_id_1
+    target: stdout     # hoặc stderr
+    encoding:
+      codec: json      # hoặc "text" nếu bạn chỉ cần chuỗi trong .message
+
+tests:
+  - name: "Test reduce route"
+    inputs:
+      - insert_at: transform_id_1
+        type: log
+        log_fields:
+          message: '2025/05/31 11:00:44 [crit] 7020#3: *109 open() "/favicon.ico" failed (2: No such file or directory), client: 176.149.195.55'
+    outputs:
+      - extract_from: transform_route_1.reduce
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.level, "notice", "Can be reduce")
+
+  - name: "Test dangerous route"
+    inputs:
+      - insert_at: transform_id_1
+        type: log
+        log_fields:
+          message: '2025/05/30 17:20:39 [crit] 2767#9: *266 flush() "/opt/app/storage/logs/laravel.log" failed (30: Read-only file system), client: 59.64.27.146'
+    outputs:
+      - extract_from: transform_route_1.dangerous
+        conditions:
+          - type: vrl
+            source: | 
+              assert_eq!(.level, "crit", "Can be reduce")

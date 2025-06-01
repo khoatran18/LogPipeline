@@ -1,0 +1,166 @@
+sources:
+  source_id_1:
+    type: kafka
+    bootstrap_servers: broker1:29092,broker2:29092,broker3:29092
+    group_id: test1
+    topics:
+      - api_access_log
+    auto_offset_reset: earliest
+    decoding:
+      codec: bytes
+    drain_timeout_ms: 2500
+    fetch_wait_max_ms: 100
+
+transforms:
+  transform_id_1:
+    type: remap
+    inputs:
+      - source_id_1
+    drop_on_abort: true
+    source: |
+      .check = "health"
+      .message = decode_charset!(.message, "utf-8")
+      check1 = parse_regex!(.message, r'(?P<ip>\d{1,3}(?:\.\d{1,3}){3}) - - \[(?P<timestamp>[0-9/\:\+\- ]+)\] \"(?P<method>\w+) (?P<url>[^ ]+) (?P<protocol>[\w/\.]+)\" (?P<status>\d+) (?P<bytes>\d+) \"(?P<user_agent>[^"]+)\" \"(?P<refer>[^"]+)\"')
+      .ip = check1.ip
+      .timestamp = check1.timestamp
+      .method = check1.method
+      .url = check1.url
+      .protocol = check1.protocol
+      .status = check1.status
+      .bytes = check1.bytes
+      .user_agent = check1.user_agent
+      .refer = check1.refer
+
+  transform_route_1:
+    type: exclusive_route
+    inputs:
+      - transform_id_1
+    routes:
+      - name: "reduce"
+        condition:
+          type: "vrl"
+          source: |
+            statics = [ ".html", ".htm", ".css", ".js", ".mjs", ".jsx", ".tsx", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".ico", ".bmp", ".tiff", ".mp3", ".wav", ".ogg", ".mp4", ".webm", ".mov", ".avi", ".mkv", ".woff", ".woff2", ".ttf", ".otf", ".eot", ".json", ".xml", ".txt",]
+            check_url = false
+            for_each(statics) -> |_, static| {
+              if (contains(string!(.url), static)) {
+                check_url = true
+              }
+            }
+            check_url
+      - name: "dangerous"
+        condition:
+          type: "vrl"
+          source: |
+            methods = ["POST", "PUT", "DELETE"]
+            check_method = false
+            check_status = false
+            
+            for_each(methods) -> |_, refer| {
+              if contains(string!(.method), refer) {
+                check_method = true
+              }
+            }
+            check_status = to_int!(.status) >= 400
+            
+            check_method || check_status 
+
+      - name: "dedupe"
+        condition:
+          type: "vrl"
+          source: |
+            true
+
+  transform_reduce_1:
+    type: filter
+    inputs:
+      - transform_route_1.reduce
+    condition:
+      type: vrl
+      source: |
+        random_int(0, 100) <= 20
+
+  transform_dedupe_1:
+    type: dedupe
+    inputs:
+      - transform_route_1.dedupe
+    cache:
+      num_events: 10000
+    fields:
+      match:
+        - method
+        - status
+        - url
+        - ip
+
+
+sinks:
+  console_output:
+    type: console
+    inputs:
+      - transform_id_1
+    target: stdout     # hoặc stderr
+    encoding:
+      codec: json      # hoặc "text" nếu bạn chỉ cần chuỗi trong .message
+      #183.4.236.86 - - [26/05/2025:00:47:11 +0700] "DELETE /download/file.zip HTTP://1.1" 204 5529 "curl/7.68.0" "http://malware.biz/track"
+  kafka_output:
+    type: kafka
+    inputs:
+      - transform_id_1
+    bootstrap_servers: broker1:29092,broker2:29092,broker3:29092
+    topic: parsed_log
+    encoding:
+      codec: json
+    buffer:
+      type: disk
+      max_size: 268435490
+      when_full: block
+
+
+
+
+
+
+
+
+
+tests:
+  - name: "Test reduce route"
+    inputs:
+      - insert_at: transform_id_1
+        type: log
+        log_fields:
+          message: '192.168.1.10 - - [25/05/2025:10:00:00 +0700] "GET /assets/logo.png HTTP/1.1" 200 1234 "Mozilla/5.0" "https://google.com"'
+    outputs:
+      - extract_from: transform_route_1.reduce
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.url, "/assets/logo.png", "can be reduce")
+
+  - name: "Test dangerous route"
+    inputs:
+      - insert_at: transform_id_1
+        type: log
+        log_fields:
+          message: '192.168.1.10 - - [25/05/2025:10:00:00 +0700] "PUT /check HTTP/1.1" 500 1234 "Mozilla/5.0" "https://google.com"'
+    outputs:
+      - extract_from: transform_route_1.dangerous
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.timestamp, "25/05/2025:10:00:00 +0700", "can be dangerous")
+
+  - name: "Test dedupe route"
+    inputs:
+      - insert_at: transform_id_1
+        type: log
+        log_fields:
+          message: '192.168.1.10 - - [25/05/2025:10:00:00 +0700] "GET /check HTTP/1.1" 200 1234 "Mozilla/5.0" "https://google.com"'
+    outputs:
+      - extract_from: transform_route_1.dedupe
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.ip, "192.168.1.10", "can be dedupe")
+      
