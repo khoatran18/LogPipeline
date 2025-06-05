@@ -9,8 +9,8 @@ import java.util.Properties;
 
 public class ProducerFactory {
 
-    private final String bootstrapServers = "localhost:9092,localhost:9093,localhost:9094";
-
+    // private final String bootstrapServers = "localhost:9092,localhost:9093,localhost:9094";
+    private final String bootstrapServers = "localhost:9092";
     public <K, V> Producer<K, V> createProducer(
             Class<? extends Serializer<K>> keySerializerClass,
             Class<? extends Serializer<V>> valueSerializerClass

@@ -159,13 +159,12 @@ public class AsaLogGenerator {
 
         ProducerFactory factory = new ProducerFactory();
         try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
-            String topic = "asa_log";
-            String key = "asa";
+            String topic = "cisco_log";
             producer.partitionsFor(topic);
             for(int i = 0; i < 20; i++) {
                 String log = generator.generateLog();
                 System.out.println(log);
-                ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, log);
+                ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);
 
                 Callback callback = (recordMetadata, e) -> {
                     System.out.println(recordMetadata.offset() + " " + recordMetadata.partition() + " " + recordMetadata.timestamp());

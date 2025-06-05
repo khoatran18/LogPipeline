@@ -193,27 +193,28 @@ public class ErrorLogGenerator {
 
     public static void main(String[] args) {
         ErrorLogGenerator generator = new ErrorLogGenerator();
-        for (int i = 0; i < 50; i++) {
-            System.out.println(generator.generateLog());
-        }
-
-
-//        ProducerFactory factory = new ProducerFactory();
-//        try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
-//            String topic = "error_log";
-//            String key = "asa";
-//            producer.partitionsFor(topic);
-//            for(int i = 0; i < 20; i++) {
-//                String log = generator.generateLog();
-//                System.out.println(log);
-//                ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, log);
-//
-//                Callback callback = (recordMetadata, e) -> {
-//                    System.out.println(recordMetadata.offset() + " " + recordMetadata.partition() + " " + recordMetadata.timestamp());
-//                };
-//                Future<RecordMetadata> result = producer.send(record, callback);
-//            }
+//        for (int i = 0; i < 50; i++) {
+//            System.out.println(generator.generateLog());
 //        }
+
+
+        ProducerFactory factory = new ProducerFactory();
+        try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
+            String topic = "error_log";
+            // String key = "asa";
+            producer.partitionsFor(topic);
+            for(int i = 0; i < 20; i++) {
+                // String log = generator.generateLog();
+                String log = "2025/06/05 08:04:42 [crit] 4285#5: *119 flush() \"/etc/nginx/nginx.conf\" failed (30: Read-only file system), client: 245.156.153.219";
+                System.out.println(log);
+                ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);
+
+                Callback callback = (recordMetadata, e) -> {
+                    System.out.println(recordMetadata.offset() + " " + recordMetadata.partition() + " " + recordMetadata.timestamp());
+                };
+                Future<RecordMetadata> result = producer.send(record, callback);
+            }
+        }
 
     }
 }

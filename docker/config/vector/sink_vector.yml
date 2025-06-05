@@ -1,0 +1,65 @@
+sources:
+  source_kafka:
+    type: kafka
+    bootstrap_servers: broker1:29092
+    group_id: enrich_log
+    inputs:
+      - enrich_log
+    auto_offset_reset: earliest
+    decoding:
+      codec: bytes
+    drain_timeout_ms: 2500
+    fetch_wait_max_ms: 100
+
+transforms:
+  del_sub_fields:
+    type: remap
+    inputs:
+      - source_kafka
+    source: |
+      del(.message_key)
+      del(.offset)
+      del(.partition)
+      del(.topic)
+      del(.source_type)
+      del(.headers)
+
+  s3_route:
+    type: remap
+    inputs:
+      - del_sub_fields
+    source: |
+      
+      
+
+  clickhouse_route:
+    type: remap
+    inputs:
+      - del_sub_fields
+    source: |
+      
+      
+
+  elasticsearch_route:
+    type: remap
+    inputs:
+      - del_sub_fields
+    source: |
+      
+      
+      
+
+sinks:
+  s3_sink:
+
+
+  clickhouse_sink:
+
+
+
+  elasticsearch_sink:
+
+
+
+
+    

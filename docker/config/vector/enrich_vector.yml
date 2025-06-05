@@ -1,0 +1,93 @@
+enrichment_tables:
+  geo_ip_db:
+    type: mmdb
+    path: /data/GeoLite2-City.mmdb
+    locale: en
+  threat_ip_csv:
+    type: file
+    file:
+      encoding:
+        include_headers: true
+        type: csv
+      path: /data/threat_ip.csv
+
+
+sources:
+  source_kafka:
+    type: kafka
+    bootstrap_servers: broker1:29092 #,broker2:29092,broker3:29092
+    group_id: test1
+    topics:
+      - parse_split_log
+    auto_offset_reset: earliest
+    decoding:
+      codec: json
+    drain_timeout_ms: 2500
+    fetch_wait_max_ms: 100
+
+transforms:
+  enrich_geo_ip_threat:
+    type: remap
+    inputs:
+      - source_kafka
+    drop_on_abort: true
+    source: |
+      threat = false
+      for_each(keys(.)) -> |_, key| {
+        if (contains(key, "ip")) {
+          value = get!(., [key])
+          if (is_ipv4(to_string!(value))) {
+      
+            # Check threat IP
+            check, _ = get_enrichment_table_record("threat_ip_csv", {"ip":value})
+            if (check != {}) {
+              if (threat == false) {
+                threat = true
+              }
+            }
+      
+            # Enrich Geo IP
+            geo_enrich, _ = get_enrichment_table_record("geo_ip_db", {"ip": value})
+            if (geo_enrich != {}) {
+              geo_name = "geo_" + key
+              geo_field = {
+                  "country": geo_enrich.country.names.en,
+                  "latitude": geo_enrich.location.latitude,
+                  "longitude": geo_enrich.location.longitude
+              }
+              . = set!(., [geo_name], geo_field)
+            } 
+      
+          }
+        }
+      }
+      .threat_ip = threat
+      del(.message_key)
+      del(.offset)
+      del(.partition)
+      del(.topic)
+      del(.source_type)
+      del(.headers)
+
+
+sinks:
+  console_output:
+    type: console
+    inputs:
+      - enrich_geo_ip_threat
+    target: stdout
+    encoding:
+      codec: json
+
+  kafka_output:
+    type: kafka
+    inputs:
+      - enrich_geo_ip_threat
+    bootstrap_servers: broker1:29092 #,broker2:29092,broker3:29092
+    topic: enrich_log
+    encoding:
+      codec: json
+    buffer:
+      type: disk
+      max_size: 268435490
+      when_full: block

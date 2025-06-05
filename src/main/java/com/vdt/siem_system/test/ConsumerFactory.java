@@ -9,8 +9,8 @@ import java.util.Properties;
 
 public class ConsumerFactory {
 
-    String bootstrapServers = "localhost:9092,localhost:9093,localhost:9094";
-
+    // String bootstrapServers = "localhost:9092,localhost:9093,localhost:9094";
+    String bootstrapServers = "localhost:9092";
     public <K, V> Consumer<K, V> createConsumer(
             String groupId,
             Class <? extends Deserializer<K>> keyDeserializerClass,

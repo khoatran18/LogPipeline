@@ -249,7 +249,6 @@ public class WindowSecurityLogGenerator {
         ProducerFactory factory = new ProducerFactory();
         try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
             String topic = "window_log";
-            String key = "asa";
             producer.partitionsFor(topic);
             for(int i = 0; i < 3000; i++) {
                 String log = "<Event xmlns=\"http://schemas.microsoft.com/win/2004/08/events/event\">\n" +
@@ -277,7 +276,7 @@ public class WindowSecurityLogGenerator {
                         "  </EventData>\n" +
                         "</Event>";
                 System.out.println(log);
-                ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, log);
+                ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);
 
                 Callback callback = (recordMetadata, e) -> {
                     System.out.println(recordMetadata.offset() + " " + recordMetadata.partition() + " " + recordMetadata.timestamp());

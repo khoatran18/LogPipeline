@@ -75,7 +75,7 @@ public class AccessLogGenerator {
 
     public String generateIp() {
         // return faker.internet().ipV4Address();
-        return "1.119.161.42";
+        return "2.119.161.42";
     }
 
     public String generateTimestamp() {
@@ -140,18 +140,18 @@ public class AccessLogGenerator {
     public static void main(String[] args) {
         AccessLogGenerator generator = new AccessLogGenerator();
 //        for (int i = 0; i < 50; i++) {
-//            System.out.println(generator.generateLog());
+//            System.out.println("1.119.161.42 - - [27/05/2025:14:06:39 +0700] \"GET /api/v2/users HTTP/2.0\" 404 950 \"Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101\" \"-\"");
 //        }
 
         ProducerFactory factory = new ProducerFactory();
         try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
-            String topic = "api_access_log";
-            String key = "asa";
+            String topic = "access_log";
             producer.partitionsFor(topic);
-            for(int i = 0; i < 20; i++) {
-                String log = generator.generateLog();
+            for(int i = 0; i < 20000; i++) {
+                String log = "1.119.161.42 - - [27/05/2025:14:06:39 +0700] \"GET /api/v2/users HTTP/2.0\" 200 950 \"Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101\" \"-\"";
+                // String log = generator.generateLog();
                 System.out.println(log);
-                ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, log);
+                ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);
 
                 Callback callback = (recordMetadata, e) -> {
                     System.out.println(recordMetadata.offset() + " " + recordMetadata.partition() + " " + recordMetadata.timestamp());
