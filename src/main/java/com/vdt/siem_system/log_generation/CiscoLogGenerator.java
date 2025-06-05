@@ -6,14 +6,13 @@ import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Future;
 
 // ------------------------------------------------------------------------------------------------------------
 // (Demo) Cisco ASA - Connection Log Generator (Severity: 4-warning, 6-informational, 7-debugging)
 // ------------------------------------------------------------------------------------------------------------
-public class AsaLogGenerator {
+public class CiscoLogGenerator {
 
     private final Faker faker = new Faker();
     private final Random rand = new Random();
@@ -89,7 +88,7 @@ public class AsaLogGenerator {
         //nAsaEventType event = events[0];
 
         // % cho log debug
-        if (rand.nextInt(3) == 0) {
+        if (rand.nextInt(5) == 0) {
             return DEBUGLOGS[rand.nextInt(DEBUGLOGS.length)];
         }
 
@@ -151,7 +150,7 @@ public class AsaLogGenerator {
     }
 
     public static void main(String[] args) {
-        AsaLogGenerator generator = new AsaLogGenerator();
+        CiscoLogGenerator generator = new CiscoLogGenerator();
 
 //        for(int i = 0; i < 50; i++) {
 //            System.out.println(generator.generateLog());
@@ -161,7 +160,7 @@ public class AsaLogGenerator {
         try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
             String topic = "cisco_log";
             producer.partitionsFor(topic);
-            for(int i = 0; i < 20; i++) {
+            for(int i = 0; i < 100; i++) {
                 String log = generator.generateLog();
                 System.out.println(log);
                 ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);

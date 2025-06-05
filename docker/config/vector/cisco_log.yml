@@ -19,7 +19,7 @@ transforms:
     drop_on_abort: true
     source: |
       .message = decode_charset!(.message, "utf-8")
-      .message = replace(.message, "\\", "")
+      .log_type = "cisco_log"
       check1 = parse_regex!(.message, r'%ASA-(?P<severity>\d+)-.+') 
       if (to_int!(check1.severity) == 7) {
         .severity = check1.severity

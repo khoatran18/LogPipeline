@@ -141,7 +141,8 @@ public class WindowSecurityLogGenerator {
 
     public String generateTimestamp() {
         long now = System.currentTimeMillis();
-        long offset = rand.nextInt(7 * 24 * 60 * 60) * 1000;
+        // 5 hours ago
+        long offset = rand.nextInt(5 * 60 * 60) * 1000;
         return dateFormat.format(new Date(now + offset));
     }
 
@@ -250,31 +251,8 @@ public class WindowSecurityLogGenerator {
         try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
             String topic = "window_log";
             producer.partitionsFor(topic);
-            for(int i = 0; i < 3000; i++) {
-                String log = "<Event xmlns=\"http://schemas.microsoft.com/win/2004/08/events/event\">\n" +
-                        "  <System>\n" +
-                        "    <Provider Name=\"Microsoft-Windows-Security-Auditing\"/>\n" +
-                        "    <EventID>4624</EventID>\n" +
-                        "    <Level>0</Level>\n" +
-                        "    <TimeCreated SystemTime=\"2025-06-05T18:15:47.354Z\"/>\n" +
-                        "    <EventRecordID>660934</EventRecordID>\n" +
-                        "    <Channel>Security</Channel>\n" +
-                        "    <Computer>mcglynn.co</Computer>\n" +
-                        "  </System>\n" +
-                        "  <EventData>\n" +
-                        "    <Data Name=\"SubjectUserSid\">S-1-5-18</Data>\n" +
-                        "    <Data Name=\"SubjectUserName\">SYSTEM</Data>\n" +
-                        "    <Data Name=\"TargetUserName\">dannie.mante</Data>\n" +
-                        "    <Data Name=\"TargetDomainName\">WORKGROUP</Data>\n" +
-                        "    <Data Name=\"LogonType\">3</Data>\n" +
-                        "    <Data Name=\"LogonProcessName\">User32</Data>\n" +
-                        "    <Data Name=\"AuthenticationPackageName\">Negotiate</Data>\n" +
-                        "    <Data Name=\"WorkstationName\">mcglynn.co</Data>\n" +
-                        "    <Data Name=\"IpAddress\">77.211.167.141</Data>\n" +
-                        "    <Data Name=\"IpPort\">50698</Data>\n" +
-                        "    <Data Name=\"ProcessName\">C:\\\\Windows\\\\System32\\\\winlogon.exe</Data>\n" +
-                        "  </EventData>\n" +
-                        "</Event>";
+            for(int i = 0; i < 100; i++) {
+                String log = generator.generateLog();
                 System.out.println(log);
                 ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);
 

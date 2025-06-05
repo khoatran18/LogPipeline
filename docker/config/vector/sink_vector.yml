@@ -3,11 +3,11 @@ sources:
     type: kafka
     bootstrap_servers: broker1:29092
     group_id: enrich_log
-    inputs:
+    topics:
       - enrich_log
     auto_offset_reset: earliest
     decoding:
-      codec: bytes
+      codec: json
     drain_timeout_ms: 2500
     fetch_wait_max_ms: 100
 
@@ -29,7 +29,7 @@ transforms:
     inputs:
       - del_sub_fields
     source: |
-      
+      true
       
 
   clickhouse_route:
@@ -37,7 +37,7 @@ transforms:
     inputs:
       - del_sub_fields
     source: |
-      
+      . = flatten!(., "_")
       
 
   elasticsearch_route:
@@ -45,20 +45,59 @@ transforms:
     inputs:
       - del_sub_fields
     source: |
-      
+      true
       
       
 
 sinks:
+
+  console_output:
+    type: console
+    inputs:
+      - del_sub_fields
+    target: stdout
+    encoding:
+      codec: json
+
   s3_sink:
+    type: aws_s3
+    inputs:
+      - del_sub_fields
+    endpoint: http://minio:9000
+    region: us-east-1
+    bucket: log-bucket
+    key_prefix: "year=%Y/month=%m/day=%d/{{ log_type }}/"
+    force_path_style: true
+    auth:
+      access_key_id: minio
+      secret_access_key: minio123
+    buffer:
+      type: disk
+      max_size: 268435490
+      when_full: block
+    compression: gzip
+    content_encoding: gzip
+    filename_extension: gz
+    content_type: application/json
+    batch:
+      max_events: 10
+      max_timeout_secs: 10
+    encoding:
+      codec: json
 
 
-  clickhouse_sink:
 
 
-
-  elasticsearch_sink:
-
+#  clickhouse_sink:
+#    type:
+#    inputs:
+#      - clickhouse_route
+#
+#
+#  elasticsearch_sink:
+#    type:
+#    inputs:
+#      - elasticsearch_route
 
 
 

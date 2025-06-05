@@ -103,7 +103,7 @@ services:
 
   vector_access_log:
     image: timberio/vector:0.46.1-debian
-    hostname: vector_log
+    hostname: vector_access_log
     container_name: vector_access_log
     restart: unless-stopped
     ports:
@@ -122,7 +122,7 @@ services:
 
   vector_cisco_log:
     image: timberio/vector:0.46.1-debian
-    hostname: vector_log
+    hostname: vector_cisco_log
     container_name: vector_cisco_log
     restart: unless-stopped
     ports:
@@ -141,7 +141,7 @@ services:
 
   vector_error_log:
     image: timberio/vector:0.46.1-debian
-    hostname: vector_log
+    hostname: vector_error_log
     container_name: vector_error_log
     restart: unless-stopped
     ports:
@@ -160,7 +160,7 @@ services:
 
   vector_window_log:
     image: timberio/vector:0.46.1-debian
-    hostname: vector_log
+    hostname: vector_window_log
     container_name: vector_window_log
     restart: unless-stopped
     ports:
@@ -179,7 +179,7 @@ services:
 
   vector_enrich:
     image: timberio/vector:0.46.1-debian
-    hostname: enrich_vector
+    hostname: vector_enrich
     container_name: vector_enrich
     restart: unless-stopped
     ports:
@@ -195,6 +195,25 @@ services:
       - ./config/vector/enrich_vector.yml:/etc/vector/vector.yaml:ro
       - ./data/GeoLite2-City.mmdb:/data/GeoLite2-City.mmdb
       - ./data/threat_ip.csv:/data/threat_ip.csv
+    networks:
+      - log-pipeline-net
+
+  vector_sink:
+    image: timberio/vector:0.46.1-debian
+    hostname: vector_sink
+    container_name: vector_sink
+    restart: unless-stopped
+    ports:
+      - 8691:8686
+    depends_on:
+      broker1:
+        condition: service_healthy
+    #      broker2:
+    #        condition: service_healthy
+    #      broker3:
+    #        condition: service_healthy
+    volumes:
+      - ./config/vector/sink_vector.yml:/etc/vector/vector.yaml:ro
     networks:
       - log-pipeline-net
 

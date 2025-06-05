@@ -48,7 +48,7 @@ transforms:
       
             # Enrich Geo IP
             geo_enrich, _ = get_enrichment_table_record("geo_ip_db", {"ip": value})
-            if (geo_enrich != {}) {
+            if (geo_enrich != {}) { 
               geo_name = "geo_" + key
               geo_field = {
                   "country": geo_enrich.country.names.en,

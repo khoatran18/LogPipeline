@@ -113,7 +113,8 @@ public class ErrorLogGenerator {
 
     public String generateTimestamp() {
         long now = System.currentTimeMillis();
-        long offset = rand.nextInt(7 * 24 * 60 * 60) * 1000;
+        // 5 hours ago
+        long offset = rand.nextInt(5 * 60 * 60) * 1000;
         return dateFormat.format(new Date(now - offset));
     }
 
@@ -203,9 +204,9 @@ public class ErrorLogGenerator {
             String topic = "error_log";
             // String key = "asa";
             producer.partitionsFor(topic);
-            for(int i = 0; i < 20; i++) {
-                // String log = generator.generateLog();
-                String log = "2025/06/05 08:04:42 [crit] 4285#5: *119 flush() \"/etc/nginx/nginx.conf\" failed (30: Read-only file system), client: 245.156.153.219";
+            for(int i = 0; i < 100; i++) {
+                String log = generator.generateLog();
+                // String log = "2025/06/05 08:04:42 [crit] 4285#5: *119 flush() \"/etc/nginx/nginx.conf\" failed (30: Read-only file system), client: 245.156.153.219";
                 System.out.println(log);
                 ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);
 

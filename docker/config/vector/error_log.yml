@@ -19,6 +19,7 @@ transforms:
     drop_on_abort: true
     source: |
       .message = decode_charset!(.message, "utf-8")
+      .log_type = "error_log"
       check1 = parse_regex!(.message, r'(?P<timestamp>[^\[]+)\[(?P<level>\w+)\] (?P<pid>\d+)#(?P<tid>\d+)\: \*(?P<request_id>\d+) (?P<error_message>[^,]+), client\: (?P<ip>.+)')
       check2 = parse_regex!(check1.error_message, r'(?P<action>\w+)[^\"]+\"(?P<file_path>[^\"]+)\"[^\(]+\((?P<errno>\d+).+')
       .timestamp = check1.timestamp

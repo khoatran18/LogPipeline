@@ -19,6 +19,7 @@ transforms:
     drop_on_abort: true
     source: |
       .message = decode_charset!(.message, "utf-8")
+      .log_type = "window_log"
       check1 = parse_xml!(.message)
       del(.message)
               
@@ -30,7 +31,7 @@ transforms:
       }
               
       system_info = check1.Event.System
-      system_object = flatten!(system_info)
+      system_object = flatten!(system_info, "_")
       key_array = keys(system_object) 
       for_each(key_array) -> |_, key| {
         value = get!(system_object, [key])
@@ -39,9 +40,9 @@ transforms:
       
       . = map_keys(.) -> |key| {
         key = replace(key, "@", "")
-        key = replace(key, ".", "")
         key = snakecase(key)
       }
+      del(.message)
 
   split_routes:
     type: exclusive_route

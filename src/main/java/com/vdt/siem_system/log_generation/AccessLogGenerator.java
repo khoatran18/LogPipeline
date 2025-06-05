@@ -74,14 +74,14 @@ public class AccessLogGenerator {
     //////////////////////////////////////// For getting values ////////////////////////////////////////
 
     public String generateIp() {
-        // return faker.internet().ipV4Address();
-        return "2.119.161.42";
+        return faker.internet().ipV4Address();
+        // return "2.119.161.42";
     }
 
     public String generateTimestamp() {
         long now = System.currentTimeMillis();
-        // 7 days
-        long offset = rand.nextInt(7 * 24 * 60 * 60) * 1000;
+        // 5 hours ago
+        long offset = rand.nextInt(5 * 60 * 60) * 1000;
         return "[" + dateFormat.format(new Date(now - offset)) + "]";
     }
 
@@ -148,8 +148,8 @@ public class AccessLogGenerator {
             String topic = "access_log";
             producer.partitionsFor(topic);
             for(int i = 0; i < 20000; i++) {
-                String log = "1.119.161.42 - - [27/05/2025:14:06:39 +0700] \"GET /api/v2/users HTTP/2.0\" 200 950 \"Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101\" \"-\"";
-                // String log = generator.generateLog();
+                // String log = "1.119.161.42 - - [27/05/2025:14:06:39 +0700] \"GET /api/v2/users HTTP/2.0\" 200 950 \"Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101\" \"-\"";
+                String log = generator.generateLog();
                 System.out.println(log);
                 ProducerRecord<String, String> record = new ProducerRecord<>(topic, log);
 

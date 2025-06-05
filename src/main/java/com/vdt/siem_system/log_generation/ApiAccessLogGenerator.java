@@ -58,7 +58,8 @@ public class ApiAccessLogGenerator {
 
     public String generateTimestamp() {
         long now = System.currentTimeMillis();
-        long offset = rand.nextInt(7 * 24 * 60 * 60) * 1000;
+        // 5 hours ago
+        long offset = rand.nextInt(5 * 60 * 60) * 1000;
         return dateFormat.format(new Date(now - offset));
     }
 
