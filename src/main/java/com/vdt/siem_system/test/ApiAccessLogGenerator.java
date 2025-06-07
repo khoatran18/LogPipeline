@@ -1,4 +1,4 @@
-package com.vdt.siem_system.log_generation;
+package com.vdt.siem_system.test;
 
 import com.github.javafaker.Faker;
 import com.google.gson.Gson;

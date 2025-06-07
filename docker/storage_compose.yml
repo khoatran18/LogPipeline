@@ -1,29 +1,29 @@
 services:
 
-#  elasticsearch:
-#    container_name: elasticsearch
-#    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
-#    restart: unless-stopped
-#    environment:
-#      - xpack.security.enabled=false
-#      - discovery.type=single-node
-#    networks:
-#      - log-pipeline-net
-#    ports:
-#      - 9200:9200
-#
-#  kibana:
-#    container_name: kibana
-#    image: docker.elastic.co/kibana/kibana:7.11.0
-#    restart: unless-stopped
-#    environment:
-#      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-#    networks:
-#      - log-pipeline-net
-#    depends_on:
-#      - elasticsearch
-#    ports:
-#      - 5601:5601
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
+    restart: unless-stopped
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    networks:
+      - log-pipeline-net
+    ports:
+      - 9200:9200
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.11.0
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - log-pipeline-net
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
 
   minio:
     container_name: minio
@@ -41,30 +41,32 @@ services:
       - ./minio/data:/data
     command: server --console-address ":9001" /data
 
-#  clickhouse:
-#    image: clickhouse/clickhouse-server
-#    container_name: clickhouse
-#    restart: unless-stopped
-#    ports:
-#      - 8123:8123    # HTTP API
-#      - 9002:9000    # Native TCP
-#    environment:
-#      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse
+    restart: unless-stopped
+    ports:
+      - 8123:8123    # HTTP API
+      - 9002:9000    # Native TCP
+    environment:
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+#      - CLICKHOUSE_USER=clickhouse
+#      - CLICKHOUSE_PASSWORD=clickhouse
 #    volumes:
 #      - ./clickhouse/data:/var/lib/clickhouse
-#    networks:
-#      - log-pipeline-net
-#
-#  tabix:
-#    image: spoonest/clickhouse-tabix-web-client
-#    container_name: tabix
-#    restart: unless-stopped
-#    ports:
-#      - 8081:80
-#    depends_on:
-#      - clickhouse
-#    networks:
-#      - log-pipeline-net
+    networks:
+      - log-pipeline-net
+
+  tabix:
+    image: spoonest/clickhouse-tabix-web-client
+    container_name: tabix
+    restart: unless-stopped
+    ports:
+      - 8081:80
+    depends_on:
+      - clickhouse
+    networks:
+      - log-pipeline-net
 
 networks:
   log-pipeline-net:

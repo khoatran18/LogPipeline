@@ -43,6 +43,8 @@ transforms:
         key = snakecase(key)
       }
       del(.message)
+      .time_created_system_time = parse_timestamp!(.time_created_system_time, "%+")
+      .time_created_system_time = format_timestamp!(.time_created_system_time, "%Y-%m-%d %H:%M:%S")
 
   split_routes:
     type: exclusive_route

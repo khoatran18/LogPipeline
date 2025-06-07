@@ -1,0 +1,58 @@
+PUT /access_log
+{
+  "mappings": {
+    "properties": {
+      "bytes": {
+        "type": "integer"
+      },
+      "geo_ip": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "keyword"
+          },
+          "latitude": {
+            "type": "float"
+          },
+          "longitude": {
+            "type": "float"
+          }
+        }
+      },
+      "ip": {
+        "type": "ip"
+      },
+      "log_type": {
+        "type": "keyword"
+      },
+      "message": {
+        "type": "text"
+      },
+      "method": {
+        "type": "keyword"
+      },
+      "protocol": {
+        "type": "keyword"
+      },
+      "refer": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "threat_ip": {
+        "type": "boolean"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "url": {
+        "type": "text"
+      },
+      "user_agent": {
+        "type": "text"
+      }
+    },
+    "dynamic": "false"
+  }
+}

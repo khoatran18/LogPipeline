@@ -6,6 +6,8 @@ sources:
     topics:
       - enrich_log
     auto_offset_reset: earliest
+    acknowledgements:
+      enabled: true
     decoding:
       codec: json
     drain_timeout_ms: 2500
@@ -38,13 +40,29 @@ transforms:
       - del_sub_fields
     source: |
       . = flatten!(., "_")
-      
+      .timestamp = parse_timestamp!(.timestamp, "%+")
+      .timestamp = format_timestamp!(.timestamp, "%Y-%m-%d %H:%M:%S")
 
   elasticsearch_route:
     type: remap
     inputs:
       - del_sub_fields
     source: |
+      #for_each(keys(.)) -> |_, key| {
+      #  if (contains(key, "geo")) {
+      #    value = get!(., [key])
+      #    point_name = key + "_point"
+      #    country_name = key + "_country"
+      #    point = {
+      #      "lat": value.latitude,
+      #      "lon": value.longitude
+      #    }
+      #    country = value.country
+      #    . = set!(., [point_name], point)
+      #   . =  set!(., [country_name], country)
+      #    #del(.[key])
+      #  }
+      #}
       true
       
       
@@ -54,7 +72,7 @@ sinks:
   console_output:
     type: console
     inputs:
-      - del_sub_fields
+      - clickhouse_route
     target: stdout
     encoding:
       codec: json
@@ -62,7 +80,7 @@ sinks:
   s3_sink:
     type: aws_s3
     inputs:
-      - del_sub_fields
+      - s3_route
     endpoint: http://minio:9000
     region: us-east-1
     bucket: log-bucket
@@ -88,17 +106,53 @@ sinks:
 
 
 
-#  clickhouse_sink:
-#    type:
-#    inputs:
-#      - clickhouse_route
-#
-#
-#  elasticsearch_sink:
-#    type:
-#    inputs:
-#      - elasticsearch_route
+  clickhouse_sink:
+    type: clickhouse
+    inputs:
+      - clickhouse_route
+    endpoint: http://clickhouse:8123
+    table: "{{ log_type }}"
+    format: json_each_row
+    skip_unknown_fields: true
+    acknowledgements:
+      enabled: true
+    auth:
+      strategy: basic
+      user: default
+      password: ""
+    batch:
+      max_events: 1
+      timeout_secs: 1
+    buffer:
+      type: disk
+      max_size: 268435490
+      when_full: block
+    healthcheck:
+      enabled: true
+    database: log_database
 
+
+  elasticsearch_sink:
+    type: elasticsearch
+    inputs:
+      - elasticsearch_route
+    endpoint: http://elasticsearch:9200
+    api_version: auto
+    batch:
+      max_events: 10
+      timeout_secs: 10
+    buffer:
+      type: disk
+      max_size: 268435488
+      when_full: block
+    mode: bulk
+    bulk:
+      action: index
+      index: "{{ log_type }}"
+      template_fallback_index: "default_log"
+    distribution:
+      retry_initial_backoff_secs: 1
+      retry_max_duration_secs: 3600
 
 
     

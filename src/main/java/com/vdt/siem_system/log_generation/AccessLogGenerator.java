@@ -147,7 +147,7 @@ public class AccessLogGenerator {
         try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
             String topic = "access_log";
             producer.partitionsFor(topic);
-            for(int i = 0; i < 20000; i++) {
+            for(int i = 0; i < 100; i++) {
                 // String log = "1.119.161.42 - - [27/05/2025:14:06:39 +0700] \"GET /api/v2/users HTTP/2.0\" 200 950 \"Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101\" \"-\"";
                 String log = generator.generateLog();
                 System.out.println(log);

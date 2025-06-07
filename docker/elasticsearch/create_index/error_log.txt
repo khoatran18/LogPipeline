@@ -1,0 +1,61 @@
+PUT /error_log
+{
+  "mappings": {
+    "properties": {
+      "action": {
+        "type": "keyword"
+      },
+      "errno": {
+        "type": "integer"
+      },
+      "error_message": {
+        "type": "text"
+      },
+      "file_path": {
+        "type": "keyword"
+      },
+      "geo_ip": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "keyword"
+          },
+          "latitude": {
+            "type": "float"
+          },
+          "longitude": {
+            "type": "float"
+          }
+        }
+      },
+      "ip": {
+        "type": "ip"
+      },
+      "level": {
+        "type": "keyword"
+      },
+      "log_type": {
+        "type": "keyword"
+      },
+      "message": {
+        "type": "text"
+      },
+      "pid": {
+        "type": "keyword"
+      },
+      "request_id": {
+        "type": "keyword"
+      },
+      "threat_ip": {
+        "type": "boolean"
+      },
+      "tid": {
+        "type": "keyword"
+      },
+      "timestamp": {
+        "type": "date"
+      }
+    },
+    "dynamic": "false"
+  }
+}
