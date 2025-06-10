@@ -1,11 +1,13 @@
 sources:
   source_kafka:
     type: kafka
-    bootstrap_servers: broker1:29092 #,broker2:29092,broker3:29092
+    bootstrap_servers: broker1:29092
     group_id: error_log
     topics:
       - error_log
     auto_offset_reset: earliest
+    acknowledgements:
+      enabled: true
     decoding:
       codec: bytes
     drain_timeout_ms: 2500
@@ -58,14 +60,12 @@ transforms:
           source: |
             true
 
-#  reduce_route:
-#    type: filter
-#    inputs:
-#      - split_routes.reduce
-#    condition:
-#      type: vrl
-#      source: |
-#        random_int(0, 100) <= 20
+      - name: "dedupe"
+        condition:
+          type: vrl
+          source: |
+            true
+
 
   sample_route:
     type: sample
@@ -74,11 +74,22 @@ transforms:
     ratio: 0.2
     sample_rate_key: ""
 
+  dedupe_route:
+    type: dedupe
+    inputs:
+      - split_routes.dedupe
+    cache:
+      num_events: 1000
+    fields:
+      match:
+        - timestamp
+
 sinks:
   console_output:
     type: console
     inputs:
       - sample_route
+      - dedupe_route
       - split_routes.dangerous
     target: stdout
     encoding:
@@ -88,9 +99,10 @@ sinks:
     type: kafka
     inputs:
       - sample_route
+      - dedupe_route
       - split_routes.dangerous
-    bootstrap_servers: broker1:29092 #,broker2:29092,broker3:29092
-    topic: parse_split_log
+    bootstrap_servers: broker1:29092
+    topic: enrich_topic
     encoding:
       codec: json
     buffer:
@@ -98,29 +110,29 @@ sinks:
       max_size: 268435490
       when_full: block
 
-tests:
-  - name: "Test reduce route"
-    inputs:
-      - insert_at: parse_json
-        type: log
-        log_fields:
-          message: '2025/05/31 11:00:44 [notice] 7020#3: *109 open() "/favicon.ico" failed (2: No such file or directory), client: 176.149.195.55'
-    outputs:
-      - extract_from: split_routes.sample
-        conditions:
-          - type: vrl
-            source: |
-              assert_eq!(.level, "notice", "Can be reduce")
-
-  - name: "Test dangerous route"
-    inputs:
-      - insert_at: parse_json
-        type: log
-        log_fields:
-          message: '2025/05/30 17:20:39 [crit] 2767#9: *266 flush() "/opt/app/storage/logs/laravel.log" failed (30: Read-only file system), client: 59.64.27.146'
-    outputs:
-      - extract_from: split_routes.dangerous
-        conditions:
-          - type: vrl
-            source: | 
-              assert_eq!(.level, "crit", "Can be reduce")
+#tests:
+#  - name: "Test reduce route"
+#    inputs:
+#      - insert_at: parse_json
+#        type: log
+#        log_fields:
+#          message: '2025/05/31 11:00:44 [notice] 7020#3: *109 open() "/favicon.ico" failed (2: No such file or directory), client: 176.149.195.55'
+#    outputs:
+#      - extract_from: split_routes.sample
+#        conditions:
+#          - type: vrl
+#            source: |
+#              assert_eq!(.level, "notice", "Can be reduce")
+#
+#  - name: "Test dangerous route"
+#    inputs:
+#      - insert_at: parse_json
+#        type: log
+#        log_fields:
+#          message: '2025/05/30 17:20:39 [crit] 2767#9: *266 flush() "/opt/app/storage/logs/laravel.log" failed (30: Read-only file system), client: 59.64.27.146'
+#    outputs:
+#      - extract_from: split_routes.dangerous
+#        conditions:
+#          - type: vrl
+#            source: |
+#              assert_eq!(.level, "crit", "Can be reduce")

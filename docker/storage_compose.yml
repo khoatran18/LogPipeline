@@ -41,32 +41,28 @@ services:
       - ./minio/data:/data
     command: server --console-address ":9001" /data
 
-  clickhouse:
-    image: clickhouse/clickhouse-server
-    container_name: clickhouse
-    restart: unless-stopped
-    ports:
-      - 8123:8123    # HTTP API
-      - 9002:9000    # Native TCP
-    environment:
-      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
-#      - CLICKHOUSE_USER=clickhouse
-#      - CLICKHOUSE_PASSWORD=clickhouse
-#    volumes:
-#      - ./clickhouse/data:/var/lib/clickhouse
-    networks:
-      - log-pipeline-net
-
-  tabix:
-    image: spoonest/clickhouse-tabix-web-client
-    container_name: tabix
-    restart: unless-stopped
-    ports:
-      - 8081:80
-    depends_on:
-      - clickhouse
-    networks:
-      - log-pipeline-net
+#  clickhouse:
+#    image: clickhouse/clickhouse-server
+#    container_name: clickhouse
+#    restart: unless-stopped
+#    ports:
+#      - 8123:8123
+#      - 9002:9000
+#    environment:
+#      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+#    networks:
+#      - log-pipeline-net
+#
+#  tabix:
+#    image: spoonest/clickhouse-tabix-web-client
+#    container_name: tabix
+#    restart: unless-stopped
+#    ports:
+#      - 8081:80
+#    depends_on:
+#      - clickhouse
+#    networks:
+#      - log-pipeline-net
 
 networks:
   log-pipeline-net:

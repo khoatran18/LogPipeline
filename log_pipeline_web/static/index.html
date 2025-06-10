@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vector Pipeline Manager</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="main-container">
+    <div class="sidebar-wrapper">
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <ul>
+              <li class="menu-item active" id="menu-pipeline-config" onclick="showSection('pipeline-config-section', 'menu-pipeline-config')">Pipeline Configuration</li>
+              <li class="menu-item" id="menu-monitoring" onclick="showSection('monitoring-dashboard-section', 'menu-monitoring')">Monitoring Dashboard</li>
+            </ul>
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="fixed-header">
+            <h2 class="main-title">Log Pipeline System</h2>
+        </div>
+        <div class="content-area">
+            <div id="pipeline-config-section" class="section active">
+<!--                <h2>Pipeline Configuration</h2>-->
+                <div id="pipelines"></div>
+                <div class="add-pipeline-btn-container" id="add-pipeline-btn-container">
+                    <button class="btn add-large-btn" onclick="showPipelineForm()">+ Add Pipeline</button>
+                </div>
+            </div>
+
+            <div id="monitoring-dashboard-section" class="section" style="display: none;">
+                <h2>Monitoring Dashboard</h2>
+                <p>This section displays statistics (CPU, RAM, logs in/out).</p>
+                <div class="dashboard-metrics">
+                    <div class="metric-box">
+                        <h3>CPU Usage</h3>
+                        <p><strong>25%</strong></p>
+                    </div>
+                    <div class="metric-box">
+                        <h3>RAM Usage</h3>
+                        <p><strong>4GB / 8GB</strong></p>
+                    </div>
+                    <div class="metric-box">
+                        <h3>Logs In</h3>
+                        <p><strong>1,234/sec</strong></p>
+                    </div>
+                    <div class="metric-box">
+                        <h3>Logs Out</h3>
+                        <p><strong>1,200/sec</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="modal" id="pipelineModal">
+    <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+      <h3 id="modal-title">Pipeline Configuration</h3>
+      <div id="inputList"></div>
+      <button class="btn" onclick="addInputConfig()">+ Add Input</button>
+      <hr>
+      <div class="centered" style="margin-top: 20px;">
+        <button class="btn" onclick="submitPipeline()">OK</button>
+        <button class="btn cancel-btn" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

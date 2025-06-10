@@ -1,0 +1,56 @@
+.container {
+  display: flex;
+  gap: 20px;
+}
+
+.container > div {
+  flex: 1;
+}
+
+.vector-box {
+  border: 1px solid black;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #f9f9f9;
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.vector-box {
+  width: 450px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 15px;
+  border: 1px solid #ccc;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  transition: background-color 0.5s;
+}
+
+.vector-box pre {
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.start-btn { background-color: #4CAF50; color: white; }
+.stop-btn { background-color: #f1c40f; color: black; }
+.update-btn { background-color: #e67e22; color: white; }
+.restart-btn { background-color: #f39c12; color: white; }
+.delete-btn { background-color: #e74c3c; color: white; }

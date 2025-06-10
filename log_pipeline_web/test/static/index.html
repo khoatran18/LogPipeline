@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vector Pipeline Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Vector Pipeline Editor</h2>
+  <div class="container">
+    <div>
+      <h3>Parse Vectors</h3>
+      <button onclick="showForm('parse')">+ Configure Parse Vectors</button>
+      <div id="parse-column"></div>
+    </div>
+    <div>
+      <h3>Enrich Vectors</h3>
+      <button onclick="showForm('enrich')">+ Configure Enrich Vectors</button>
+      <div id="enrich-column"></div>
+    </div>
+    <div>
+      <h3>Sink Vectors</h3>
+      <button onclick="showForm('sink')">+ Configure Sink Vectors</button>
+      <div id="sink-column"></div>
+    </div>
+  </div>
+
+  <div id="form-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3 id="form-title"></h3>
+      <form id="vector-form">
+        <div id="form-fields"></div>
+        <button type="submit">Add Vector</button>
+        <button type="button" onclick="closeForm()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

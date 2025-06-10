@@ -2,9 +2,9 @@ sources:
   source_kafka:
     type: kafka
     bootstrap_servers: broker1:29092
-    group_id: enrich_log
+    group_id: sink_topic
     topics:
-      - enrich_log
+      - sink_topic
     auto_offset_reset: earliest
     acknowledgements:
       enabled: true
@@ -105,6 +105,28 @@ sinks:
 
 
 
+  elasticsearch_sink:
+    type: elasticsearch
+    inputs:
+      - elasticsearch_route
+    endpoint: http://elasticsearch:9200
+    api_version: auto
+    batch:
+      max_events: 10
+      timeout_secs: 10
+    buffer:
+      type: disk
+      max_size: 268435488
+      when_full: block
+    mode: bulk
+    bulk:
+      action: index
+      index: "{{ log_type }}"
+      template_fallback_index: "default_log"
+    distribution:
+      retry_initial_backoff_secs: 1
+      retry_max_duration_secs: 3600
+
 
   clickhouse_sink:
     type: clickhouse
@@ -130,29 +152,6 @@ sinks:
     healthcheck:
       enabled: true
     database: log_database
-
-
-  elasticsearch_sink:
-    type: elasticsearch
-    inputs:
-      - elasticsearch_route
-    endpoint: http://elasticsearch:9200
-    api_version: auto
-    batch:
-      max_events: 10
-      timeout_secs: 10
-    buffer:
-      type: disk
-      max_size: 268435488
-      when_full: block
-    mode: bulk
-    bulk:
-      action: index
-      index: "{{ log_type }}"
-      template_fallback_index: "default_log"
-    distribution:
-      retry_initial_backoff_secs: 1
-      retry_max_duration_secs: 3600
 
 
     

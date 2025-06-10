@@ -1,0 +1,12 @@
+enrichment_tables:
+  geo_ip_db:
+    type: mmdb
+    path: /data/GeoLite2-City.mmdb
+    locale: en
+  threat_ip_csv:
+    type: file
+    file:
+      encoding:
+        include_headers: true
+        type: csv
+      path: /data/threat_ip.csv

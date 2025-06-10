@@ -1,0 +1,768 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #f4f4f4;
+  color: #333;
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.sidebar-wrapper {
+    width: 270px; /* Giữ nguyên chiều rộng của wrapper */
+    flex-shrink: 0;
+    position: fixed; /* Giữ sidebar cố định trên màn hình */
+    height: 100vh;   /* Đảm bảo sidebar chiếm toàn bộ chiều cao của viewport */
+    top: 0;          /* Căn sidebar vào đầu viewport */
+    left: 0;         /* Căn sidebar vào bên trái viewport */
+    z-index: 100;    /* Đảm bảo sidebar nằm trên các nội dung khác nếu có chồng lấn */
+}
+
+.sidebar {
+  width: 100%; /* Đảm bảo sidebar chiếm toàn bộ chiều rộng của wrapper */
+  background-color: #2c3e50;
+  color: white;
+  padding: 20px 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sidebar h2 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 30px;
+  color: #ecf0f1;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.sidebar li {
+  padding: 15px 20px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: calc(100% - 40px);
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.sidebar li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 10%;
+    right: 10%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar li:hover {
+  background-color: #34495e;
+  color: white;
+}
+
+.sidebar li.active {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.6);
+}
+
+.content-wrapper {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: #f4f4f4;
+    margin-left: 270px; /* Thêm khoảng trống bằng chiều rộng của sidebar */
+    position: relative; /* Quan trọng để fixed-header căn chỉnh tương đối */
+    padding-top: 70px; /* Thêm padding-top để tạo không gian cho fixed-header */
+    padding-left: 20px; /* Giữ padding trái */
+    padding-right: 20px; /* Giữ padding phải */
+    padding-bottom: 20px; /* Giữ padding dưới */
+}
+
+/* --- Fixed Header Styling --- */
+.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 270px; /* Bắt đầu sau sidebar */
+    right: 0;
+    height: 70px; /* Chiều cao của header */
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 99; /* Dưới sidebar nhưng trên nội dung */
+    display: flex;
+    align-items: center;
+    padding-left: 20px; /* Padding phù hợp với content-wrapper */
+    box-sizing: border-box; /* Đảm bảo padding không làm tăng chiều rộng */
+}
+
+.fixed-header .main-title {
+    margin: 0;
+    color: #333;
+    font-size: 1.8em; /* Tăng kích thước font */
+}
+
+
+.content-area {
+    /* Loại bỏ padding-top ban đầu, vì fixed-header đã xử lý */
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* Loại bỏ .centered cho nút Add Pipeline ban đầu */
+.centered {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Điều chỉnh lại nút .btn chung */
+.btn {
+  padding: 10px 20px;
+  background-color: #007bff; /* Màu xanh dương tiêu chuẩn */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+.cancel-btn {
+  background-color: #ccc;
+  color: black;
+}
+
+.cancel-btn:hover {
+  background-color: #999;
+}
+
+.run-btn {
+  background-color: #28a745;
+}
+
+.run-btn:hover {
+  background-color: #218838;
+}
+
+.stop-btn {
+  background-color: #dc3545;
+}
+
+.stop-btn:hover {
+  background-color: #c82333;
+}
+
+/* --- New Add Pipeline Button Positioning --- */
+.add-pipeline-btn-container {
+    text-align: right; /* Căn nút sang phải khi có pipeline */
+    margin-top: 30px;
+    padding-bottom: 20px;
+    padding-right: 15px;
+    width: 100%; /* Đảm bảo nó chiếm đủ chiều rộng để căn chỉnh */
+    box-sizing: border-box;
+}
+
+/* Class mới cho nút "Add Pipeline" khi không có pipeline */
+.add-pipeline-btn-container.empty-state {
+    text-align: center; /* Căn giữa */
+    position: absolute; /* Vị trí tuyệt đối để căn giữa trong content-area */
+    top: 25%; /* Dịch lên trên (từ 50% xuống 25%) */
+    left: 50%; /* Giữ ở giữa */
+    transform: translate(-50%, -50%); /* Dịch ngược lại 50% kích thước của chính nó để căn giữa hoàn hảo */
+    margin-top: 0; /* Bỏ margin-top cũ */
+    padding-bottom: 0; /* Bỏ padding-bottom cũ */
+    padding-right: 0; /* Bỏ padding-right cũ */
+    width: auto; /* Để width tự động theo nội dung */
+    box-sizing: content-box; /* Quay lại content-box để transform hoạt động đúng */
+}
+
+
+.add-large-btn {
+    padding: 12px 25px; /* Giảm padding cho nút Add Pipeline bên ngoài */
+    font-size: 1.1em;   /* Giảm kích thước chữ cho nút Add Pipeline bên ngoài */
+    background-color: #00a0e0;
+}
+
+.add-large-btn:hover {
+    background-color: #007bb5;
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+input[type="text"], select {
+  width: calc(100% - 12px);
+  padding: 8px;
+  margin: 5px 0 10px 0;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+/* Điều chỉnh riêng cho select để trông đẹp hơn khi nằm cạnh input */
+select {
+    padding: 9px 8px; /* Tăng padding để khớp chiều cao input */
+    height: 38px; /* Đảm bảo chiều cao nhất quán */
+    width: 100%; /* Đảm bảo chiếm đủ chiều rộng trong form-group */
+}
+
+
+input[type="checkbox"] {
+  margin-right: 5px;
+}
+input[type="radio"] { /* Style for radio buttons */
+    margin-right: 5px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.required {
+    color: red;
+    margin-left: 2px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #eee;
+  margin: 20px 0;
+}
+
+.input-block {
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9;
+  position: relative;
+}
+
+.input-block h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-input-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+
+.delete-input-btn:hover {
+  background-color: #c82333;
+}
+
+.input-divider {
+  border: 0;
+  border-top: 1px dashed #e0e0e0;
+  margin: 15px 0 5px 0;
+}
+
+/* New Sink Section Styling */
+.sink-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #ccc;
+    position: relative; /* Quan trọng để float hoạt động đúng */
+    min-height: 50px; /* Đảm bảo đủ không gian cho nút float */
+}
+
+.sink-section h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #007bff;
+}
+
+/* Làm nút Add Sink mờ nhạt và nhỏ hơn */
+.add-sink-btn {
+  background-color: #338aed; /* Màu xám nhạt, ít nổi bật */
+  color: #000000; /* Màu chữ tối hơn */
+  padding: 6px 12px; /* Nhỏ hơn so với .btn thông thường */
+  font-size: 0.85em; /* Kích thước chữ nhỏ hơn */
+  border-radius: 4px;
+  margin-top: 10px;
+  float: right; /* Căn phải */
+  margin-bottom: 10px; /* Để tạo khoảng trống dưới nút */
+  opacity: 0.8; /* Mờ nhạt hơn */
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.add-sink-btn:hover {
+  background-color: #146de1; /* Tối hơn một chút khi hover */
+  opacity: 1; /* Hiển thị rõ hơn khi hover */
+}
+
+/* Clearfix để xử lý float trong sink-section */
+.sink-section::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.sink-block-modal {
+    border: 1px solid #cce5ff;
+    background-color: #eaf6ff;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+    clear: both; /* Để các sink block không bị ảnh hưởng bởi float của nút Add Sink */
+}
+
+.sink-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.sink-header label {
+    display: inline-flex;
+    align-items: center;
+    font-weight: normal;
+    margin-right: 15px;
+    margin-bottom: 0;
+}
+
+.sink-header .delete-input-btn {
+    margin-left: auto;
+}
+
+.sink-fields {
+    padding-left: 20px;
+    border-left: 2px solid #007bff;
+    margin-top: 10px;
+    padding-bottom: 5px;
+}
+
+/* New: Flexbox for form rows */
+.form-row {
+    display: flex;
+    gap: 20px; /* Khoảng cách giữa các cột */
+    width: 100%;
+    margin-bottom: 10px; /* Khoảng cách dưới mỗi hàng */
+}
+
+.form-group {
+    flex: 1; /* Mỗi nhóm sẽ chiếm một phần bằng nhau */
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%; /* Đảm bảo input/select chiếm hết chiều rộng của form-group */
+    box-sizing: border-box; /* Bao gồm padding và border vào kích thước */
+}
+
+
+.sink-divider {
+    border: 0;
+    border-top: 1px dashed #a0d8ff;
+    margin: 15px 0 5px 0;
+}
+
+/* Validation Error Styling */
+.error-field {
+    border: 1px solid red !important;
+    background-color: #ffe0e0 !important;
+}
+
+.error-field::placeholder {
+    color: red;
+}
+.sink-header.error-field {
+    border: 1px solid red;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+
+#pipelines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.pipeline-box {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  width: 900px;
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  min-height: 60px;
+}
+
+.pipeline-box.running {
+  border-color: #28a745;
+  box-shadow: 0 0 20px rgba(40, 167, 69, 0.7);
+}
+
+
+.pipeline-box.collapsed {
+    height: 60px;
+    width: 900px;
+    padding: 10px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.pipeline-box.collapsed .pipeline-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    height: auto;
+    width: 100%;
+}
+
+.pipeline-box.collapsed .pipeline-column-headers,
+.pipeline-box.collapsed .pipeline-content,
+.pipeline-box.collapsed .pipeline-controls {
+    display: none !important;
+}
+
+.pipeline-column-headers {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+    width: 100%;
+}
+
+.header-cell {
+    text-align: center;
+    padding: 5px 10px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.logtype-cell-header { flex-basis: 25%; }
+.enrich-cell-header { flex-basis: 35%; }
+.sink-cell-header { flex-basis: 40%; }
+
+
+.pipeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.pipeline-input-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fcfcfc;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.pipeline-cell {
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    border-right: 1px solid #eee;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.pipeline-cell:last-child {
+    border-right: none;
+}
+
+.logtype-cell {
+    flex-basis: 25%;
+}
+
+.enrich-cell {
+    flex-basis: 35%;
+}
+
+.sink-display-cell {
+    flex-basis: 40%;
+    padding: 10px;
+}
+
+.block {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    padding: 8px 12px;
+    text-align: center;
+    font-size: 0.9em;
+    color: #495057;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.logtype-block-content strong {
+    font-size: 1.1em;
+    color: #007bff;
+    text-align: left;
+    width: 100%;
+}
+
+.enrich-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.enrich-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 12px;
+    background-color: #e0f2f7;
+    border: 1px solid #b2ebf2;
+    border-radius: 5px;
+    font-size: 0.9em;
+    color: #00796b;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    flex-grow: 1;
+    flex-basis: auto;
+    min-width: 0;
+    max-width: 50%;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.enrich-container:has(> .enrich-block:only-child) .enrich-block {
+    max-width: fit-content;
+    flex-grow: 0;
+}
+
+
+.enrich-block img {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.no-enrich-display {
+    background-color: #f0f0f0;
+    color: #888;
+    border: 1px dashed #ccc;
+    font-style: italic;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* Đảm bảo input-sinks-container-display là một flex container cột */
+.input-sinks-container-display {
+    display: flex;
+    flex-direction: column; /* Quan trọng: Để các sink xếp chồng lên nhau */
+    gap: 8px;
+    width: 100%;
+    align-items: flex-start;
+}
+
+/* Đảm bảo các khối sink có chiều cao tối thiểu nhất quán và giãn đều */
+.sink-block {
+  display: flex; /* Biến mỗi sink block thành flex container */
+  align-items: center; /* Căn giữa các item theo chiều dọc */
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  padding: 8px;
+  background-color: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  height: 80px; /* Đảm bảo chiều cao tối thiểu chung */
+  box-sizing: border-box; /* Quan trọng: Bao gồm padding và border vào tổng chiều cao/rộng */
+}
+
+.sink-block img {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.sink-block div {
+    flex-grow: 1; /* Cho phép div chứa text giãn nở để lấp đầy không gian còn lại */
+    display: flex; /* Biến div này thành flex container */
+    flex-direction: column; /* Sắp xếp nội dung theo cột */
+    justify-content: center; /* Căn giữa nội dung theo chiều dọc nếu có đủ không gian */
+    height: 100%; /* **QUAN TRỌNG:** Đảm bảo div này giãn ra chiếm toàn bộ chiều cao của .sink-block */
+}
+
+.sink-block strong {
+  display: block;
+  font-size: 1.1em;
+  color: #0056b3;
+}
+
+.no-sink-display {
+    background-color: #f0f0f0;
+    color: #888;
+    border: 1px dashed #ccc;
+    font-style: italic;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.dashboard-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.metric-box {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.metric-box h3 {
+  margin-top: 0;
+  color: #007bff;
+}
+
+.metric-box p {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #333;
+  margin: 10px 0 0;
+}
+
+/* Cải thiện tiêu đề Monitoring Dashboard */
+#monitoring-dashboard-section h2 {
+    font-size: 2em; /* Tăng kích thước font */
+    color: #007bff; /* Màu sắc nổi bật hơn */
+    margin-top: 20px;
+    margin-bottom: 30px;
+    text-align: center; /* Căn giữa */
+}
+
+/* Thêm tiêu đề cho Pipeline Configuration section */
+#pipeline-config-section .section-title { /* Đổi từ h2 sang class để linh hoạt hơn */
+    font-size: 2em;
+    color: #007bff;
+    margin-top: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.pipeline-controls {
+  text-align: right;
+  padding-top: 15px;
+  border-top: 1px dashed #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* New CSS for disabled edit button */
+.disabled-edit-btn {
+    background-color: #90b8e0 !important; /* Màu xám nhạt hơn */
+    cursor: not-allowed !important; /* Con trỏ "không được phép" */
+    opacity: 0.6; /* Làm mờ nút */
+    box-shadow: none; /* Bỏ đổ bóng */
+}
+
+.disabled-edit-btn:hover {
+    background-color: #90b8e0 !important; /* Giữ nguyên màu khi hover */
+}

@@ -15,11 +15,13 @@ enrichment_tables:
 sources:
   source_kafka:
     type: kafka
-    bootstrap_servers: broker1:29092 #,broker2:29092,broker3:29092
-    group_id: test1
+    bootstrap_servers: broker1:29092
+    group_id: enrich_topic
     topics:
-      - parse_split_log
+      - enrich_topic
     auto_offset_reset: earliest
+    acknowledgements:
+      enabled: true
     decoding:
       codec: json
     drain_timeout_ms: 2500
@@ -84,7 +86,7 @@ sinks:
     inputs:
       - enrich_geo_ip_threat
     bootstrap_servers: broker1:29092 #,broker2:29092,broker3:29092
-    topic: enrich_log
+    topic: sink_topic
     encoding:
       codec: json
     buffer:
