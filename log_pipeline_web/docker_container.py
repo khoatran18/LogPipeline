@@ -2,8 +2,6 @@ import subprocess
 import os
 
 def run_container(data, folder_path):
-
-
     parse_name = f"parse_vector_{data['fullPipelineConfig']['id']}"
     enrich_name = f"enrich_sink_vector_{data['fullPipelineConfig']['id']}"
     container_names = [parse_name, enrich_name]
@@ -25,7 +23,7 @@ def run_container(data, folder_path):
                     "-v", f"{config_path}:/etc/vector/vector.yaml:ro",
                     "-v", f"{data_path_1}:/data/GeoLite2-City.mmdb",
                     "-v", f"{data_path_2}:/data/threat_ip.csv",
-                    "-p", f"{8686 + 1 + int(data['pipelineId'])}:8686",
+                    "-p", f"{8686 + 1 + 2*int(data['pipelineId'])}:8686",
                     "timberio/vector:0.46.1-debian"
                 ]
             else:
@@ -35,7 +33,7 @@ def run_container(data, folder_path):
                    "--restart", "unless-stopped",
                    "--network", "log-pipeline-net",
                    "-v", f"{config_path}:/etc/vector/vector.yaml:ro",
-                   "-p", f"{8686 + int(data['pipelineId'])}:8686",
+                   "-p", f"{8686 + 2*int(data['pipelineId'])}:8686",
                    "timberio/vector:0.46.1-debian"
                    ]
         elif (data['action'] == 'stop'):

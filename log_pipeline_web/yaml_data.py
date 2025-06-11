@@ -1,6 +1,5 @@
 enrichment_table = {'enrichment_tables': {'geo_ip_db': {'type': 'mmdb', 'path': '/data/GeoLite2-City.mmdb', 'locale': 'en'}, 'threat_ip_csv': {'type': 'file', 'file': {'encoding': {'include_headers': True, 'type': 'csv'}, 'path': '/data/threat_ip.csv'}}}}
 
-
 source_error_log = {'type': 'kafka', 'bootstrap_servers': 'broker1:29092', 'group_id': 'error_log', 'topics': ['error_log'], 'auto_offset_reset': 'earliest', 'acknowledgements': {'enabled': True}, 'decoding': {'codec': 'bytes'}, 'drain_timeout_ms': 2500, 'fetch_wait_max_ms': 100}
 source_access_log = {'type': 'kafka', 'bootstrap_servers': 'broker1:29092', 'group_id': 'access_log', 'topics': ['access_log'], 'auto_offset_reset': 'earliest', 'acknowledgements': {'enabled': True}, 'decoding': {'codec': 'bytes'}, 'drain_timeout_ms': 2500, 'fetch_wait_max_ms': 100}
 source_window_log = {'type': 'kafka', 'bootstrap_servers': 'broker1:29092', 'group_id': 'window_log', 'topics': ['window_log'], 'auto_offset_reset': 'earliest', 'acknowledgements': {'enabled': True}, 'decoding': {'codec': 'bytes'}, 'drain_timeout_ms': 2500, 'fetch_wait_max_ms': 100}
@@ -29,6 +28,7 @@ parse_error_log = r"""
       .errno = check2.errno
       
 """
+
 parse_access_log = r"""
     type: remap
     inputs:
@@ -48,6 +48,7 @@ parse_access_log = r"""
       .user_agent = check1.user_agent
       .refer = check1.refer
 """
+
 parse_window_log = r"""
     type: remap
     inputs:
@@ -57,7 +58,6 @@ parse_window_log = r"""
       .message = decode_charset!(.message, "utf-8")
       .log_type = "window_log"
       check1 = parse_xml!(.message)
-      del(.message)
               
       data_info = check1.Event.EventData.Data
       for_each(array!(data_info)) -> |_, item| {
@@ -83,6 +83,7 @@ parse_window_log = r"""
       .time_created_system_time = format_timestamp!(.time_created_system_time, "%Y-%m-%d %H:%M:%S")
 
 """
+
 parse_cisco_log = r"""
     type: remap
     inputs:
@@ -567,6 +568,7 @@ elasticsearch_error_log = r"""
     inputs:
       - elasticsearch_route
     source: |
+      del(.message)
       .log_type == "error_log"
 """
 
@@ -575,6 +577,7 @@ elasticsearch_access_log = r"""
     inputs:
       - elasticsearch_route
     source: |
+      del(.message)
       .log_type == "access_log"
 """
 
@@ -583,6 +586,7 @@ elasticsearch_window_log = r"""
     inputs:
       - elasticsearch_route
     source: |
+      del(.message)
       .log_type == "error_log"
 """
 
@@ -591,6 +595,7 @@ elasticsearch_cisco_log = r"""
     inputs:
       - elasticsearch_route
     source: |
+      del(.message)
       .log_type == "cisco_log"
 """
 
@@ -644,8 +649,8 @@ sink_elasticsearch = r"""
       retry_max_duration_secs: 3600
 """
 
+# Full config data
 yaml_data = {
-
     'enrichment_table': enrichment_table,
 
     'source_error_log': source_error_log,
@@ -697,5 +702,4 @@ yaml_data = {
 
     'sink_aws_s3': sink_aws_s3,
     'sink_elasticsearch': sink_elasticsearch,
-
 }

@@ -716,52 +716,98 @@ document.addEventListener('click', function(event) {
 });
 
 
+// ĐÂY LÀ HÀM CẦN THAY THẾ TOÀN BỘ TRONG FILE CỦA BẠN
 function togglePipelineRun(pipelineId) {
   const pipeline = pipelines.find(p => p.id === pipelineId);
   if (pipeline) {
-    pipeline.isRunning = !pipeline.isRunning; // Cập nhật trạng thái
-    renderAllPipelines(); // Render lại giao diện ngay lập tức để thấy thay đổi
+    const toggleRunButton = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"] .run-btn, .pipeline-box[data-pipeline-id="${pipelineId}"] .stop-btn`);
 
-    // Gửi thông tin của toàn bộ pipeline về backend
+    const previousIsRunning = pipeline.isRunning; // Lưu trạng thái hiện tại để có thể rollback
+
+    // 1. Kích hoạt trạng thái pending ngay lập tức
+    if (toggleRunButton) {
+      toggleRunButton.classList.add('pending-btn'); // Thêm class màu vàng
+      toggleRunButton.disabled = true; // Vô hiệu hóa nút để tránh click nhiều lần
+      toggleRunButton.textContent = 'Đang xử lý...'; // Thay đổi văn bản hiển thị
+    }
+
+    // Cập nhật UI tạm thời để thể hiện trạng thái mong muốn (đang chạy/đã dừng)
+    // Điều này làm cho UI phản hồi nhanh hơn ngay cả trước khi backend xác nhận
+    pipeline.isRunning = !pipeline.isRunning;
+    renderAllPipelines(); // Render lại để cập nhật trạng thái hiển thị (ví dụ: viền xanh/đỏ)
+
+    // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động và nút được nhấp
+    const targetPipelineBox = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"]`);
+    if (targetPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
+        targetPipelineBox.classList.remove('collapsed');
+    }
+
+    // Bắt đầu thời gian chờ tối thiểu (ví dụ: 2 giây)
+    const minDelay = 2000; // 2 giây
+    const startTime = Date.now();
+
     fetch('/vector-action', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Gửi toàn bộ đối tượng pipeline, backend sẽ phân tích 'action' (run/stop)
-      // và sử dụng thông tin cấu hình bên trong.
-      // Cần thêm trường 'action' để backend biết đây là thao tác 'run' hay 'stop'
       body: JSON.stringify({
-          action: pipeline.isRunning ? 'start' : 'stop', // Thêm hành động cụ thể
-          pipelineId: pipeline.id, // Gửi ID của pipeline
-          fullPipelineConfig: pipeline // Gửi toàn bộ cấu hình pipeline
+          action: pipeline.isRunning ? 'start' : 'stop',
+          pipelineId: pipeline.id,
+          fullPipelineConfig: pipeline
       }),
     })
     .then(response => response.json())
     .then(data => {
-      console.log('Backend response:', data);
-      // Bạn có thể xử lý phản hồi từ backend tại đây, ví dụ:
-      // if (data.status === 'error') {
-      //     alert('Failed to update pipeline status on server: ' + data.message);
-      //     // Rollback UI nếu cần
-      //     pipeline.isRunning = !pipeline.isRunning;
-      //     renderAllPipelines();
-      // }
+      const endTime = Date.now();
+      const elapsedTime = endTime - startTime;
+      const remainingDelay = Math.max(0, minDelay - elapsedTime); // Tính thời gian còn lại để đạt 2s
+
+      setTimeout(() => {
+        // 2. Loại bỏ trạng thái pending và kích hoạt lại nút sau khi fetch hoàn tất và thời gian chờ tối thiểu
+        if (toggleRunButton) {
+          toggleRunButton.classList.remove('pending-btn'); // Xóa class màu vàng
+          toggleRunButton.disabled = false; // Kích hoạt lại nút
+        }
+        // Render lại để đảm bảo trạng thái cuối cùng là chính xác (trong trường hợp backend lỗi hoặc để nhất quán)
+        renderAllPipelines(); // Điều này cũng sẽ cập nhật lại văn bản nút thành "Run" hoặc "Stop"
+
+        // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động sau khi có phản hồi từ backend
+        if (targetPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
+            targetPipelineBox.classList.remove('collapsed');
+        }
+
+        // Tùy chọn: Nếu backend báo lỗi và bạn muốn khôi phục lại UI
+        // if (data.status === 'error') {
+        //     alert('Failed to update pipeline status on server: ' + data.message);
+        //     pipeline.isRunning = previousIsRunning; // Khôi phục trạng thái UI
+        //     renderAllPipelines(); // Render lại để phản ánh trạng thái đã khôi phục
+        // }
+      }, remainingDelay); // Chờ đủ thời gian còn lại
     })
     .catch((error) => {
-      console.error('Error sending pipeline status to backend:', error);
-      alert('Network error or server issue. Could not update pipeline status.');
-      // Rollback UI nếu có lỗi mạng
-      pipeline.isRunning = !pipeline.isRunning;
-      renderAllPipelines();
-    });
+      console.error('Lỗi khi gửi trạng thái pipeline đến backend:', error);
+      alert('Lỗi mạng hoặc sự cố máy chủ. Không thể cập nhật trạng thái pipeline.');
+      // Khôi phục UI nếu có lỗi mạng
+      pipeline.isRunning = previousIsRunning; // Quan trọng: Khôi phục lại trạng thái UI nếu có lỗi
+      renderAllPipelines(); // Render lại để phản ánh trạng thái đã khôi phục
 
-    // Sau khi render lại, đảm bảo pipeline này vẫn mở nếu nó là activePipelineBox
-    const targetPipelineBox = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"]`);
-    if (targetPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
-        targetPipelineBox.classList.remove('collapsed');
-        // Không cần cập nhật activePipelineBox vì nó đã được đặt ở trên
-    }
+      const endTime = Date.now();
+      const elapsedTime = endTime - startTime;
+      const remainingDelay = Math.max(0, minDelay - elapsedTime);
+
+      setTimeout(() => {
+        // Loại bỏ trạng thái pending và kích hoạt lại nút ngay cả khi có lỗi
+        if (toggleRunButton) {
+          toggleRunButton.classList.remove('pending-btn');
+          toggleRunButton.disabled = false; // Kích hoạt lại nút
+        }
+        // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động sau khi có lỗi
+        if (targetPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
+            targetPipelineBox.classList.remove('collapsed');
+        }
+      }, remainingDelay);
+    });
   }
 }
 

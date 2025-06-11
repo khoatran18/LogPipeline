@@ -766,3 +766,13 @@ hr {
 .disabled-edit-btn:hover {
     background-color: #90b8e0 !important; /* Giữ nguyên màu khi hover */
 }
+
+.pending-btn {
+  background-color: #ffc107 !important; /* Yellow color */
+  cursor: wait !important; /* Change cursor to a loading indicator */
+  opacity: 0.8;
+}
+
+.pending-btn:hover {
+  background-color: #e0a800 !important; /* Darker yellow on hover */
+}

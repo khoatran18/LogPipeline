@@ -203,10 +203,6 @@ def create_parse_yaml(data):
 
 
 
-#
-# config = create_pre_config(data)
-# print(create_parse_yaml(data))
-
 def create_enrich_source_yaml(data):
   # config = create_pre_config(data)
   pipelineId = data['fullPipelineConfig']['id']
@@ -230,7 +226,7 @@ def create_enrich_transform_yaml(data):
     # For enrich
     id = f"enrich_{mainId}"
     inputsPre.append(id)
-    enrich = None
+    enrich = {}
     if fullPipelineConfig[index]['enrich_geoip'] == True and fullPipelineConfig[index]['enrich_threatip'] == True:
       enrich_str = yaml_data.yaml_data[f"enrich_all"]
       enrich = yaml.load(enrich_str)
@@ -243,6 +239,7 @@ def create_enrich_transform_yaml(data):
     else:
       enrich_str = yaml_data.yaml_data["enrich_null"]
       enrich = yaml.load(enrich_str)
+    enrich['inputs'] = [f"source_enrich_{data['pipelineId']}"]
     transformYaml[id] = enrich
 
   # For Pre Transform For Sink
@@ -322,7 +319,7 @@ def main_create_yaml_file(data, folder_path):
     print("Open successfully")
     yaml.dump(config_enrich, f)
 
-#
+
 
 
 

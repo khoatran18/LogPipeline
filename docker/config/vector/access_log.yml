@@ -1,3 +1,4 @@
+
 sources:
   source_kafka:
     type: kafka
@@ -12,6 +13,9 @@ sources:
       codec: bytes
     drain_timeout_ms: 2500
     fetch_wait_max_ms: 100
+  source_metric:
+    type: internal_metrics
+
 
 transforms:
   parse_json:
@@ -92,15 +96,32 @@ transforms:
         - status
         - url
         - ip
+  transform_metric:
+    inputs:
+      - source_metric
+    type: filter
+    condition:
+      type: vrl
+      source: |
+        .tags.component_type == "kafka" && .name == "component_received_event_bytes_total"
+        # (.name == "kafka_queue_messages" || .name == "component_received_bytes_total" || .name == "component_received_event_bytes_total" || .name == "kafka_queue_messages" || .name == "kafka_queue_messages_bytes")
 
 
 sinks:
-  console_output:
+#  console_output:
+#    type: console
+#    inputs:
+#      - sample_route
+#      - dedupe_route
+#      - split_routes.dangerous
+#    target: stdout
+#    encoding:
+#      codec: json
+
+  console_metric:
     type: console
     inputs:
-      - sample_route
-      - dedupe_route
-      - split_routes.dangerous
+      - transform_metric
     target: stdout
     encoding:
       codec: json
