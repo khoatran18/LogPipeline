@@ -1,0 +1,114 @@
+sources:
+  source_access_log_input-2:
+    type: kafka
+    bootstrap_servers: broker1:29092
+    group_id: access_log
+    topics:
+    - access_log
+    auto_offset_reset: earliest
+    acknowledgements:
+      enabled: true
+    decoding:
+      codec: bytes
+    drain_timeout_ms: 2500
+    fetch_wait_max_ms: 100
+transforms:
+  parse_access_log_input-2:
+    type: remap
+    inputs:
+    - source_access_log_input-2
+    drop_on_abort: true
+    source: |
+      .message = decode_charset!(.message, "utf-8")
+      .log_type = "access_log"
+      check1 = parse_regex!(.message, r'(?P<ip>\d{1,3}(?:\.\d{1,3}){3}) - - \[(?P<timestamp>[0-9/\:\+\- ]+)\] \"(?P<method>\w+) (?P<url>[^ ]+) (?P<protocol>[\w/\.]+)\" (?P<status>\d+) (?P<bytes>\d+) \"(?P<user_agent>[^"]+)\" \"(?P<refer>[^"]+)\"')
+      .ip = check1.ip
+      .timestamp = check1.timestamp
+      .method = check1.method
+      .url = check1.url
+      .protocol = check1.protocol
+      .status = check1.status
+      .bytes = check1.bytes
+      .user_agent = check1.user_agent
+      .refer = check1.refer
+  split_access_log_input-2:
+    type: exclusive_route
+    inputs:
+    - parse_access_log_input-2
+    routes:
+    - name: "sample"
+      condition:
+        type: "vrl"
+        source: |
+          statics = [ ".html", ".htm", ".css", ".js", ".mjs", ".jsx", ".tsx", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".ico", ".bmp", ".tiff", ".mp3", ".wav", ".ogg", ".mp4", ".webm", ".mov", ".avi", ".mkv", ".woff", ".woff2", ".ttf", ".otf", ".eot", ".json", ".xml", ".txt",]
+          check_url = false
+          for_each(statics) -> |_, static| {
+            if (contains(string!(.url), static)) {
+              check_url = true
+            }
+          }
+          check_url
+    - name: "dangerous"
+      condition:
+        type: "vrl"
+        source: |
+          methods = ["POST", "PUT", "DELETE"]
+          check_method = false
+          check_status = false
+
+          for_each(methods) -> |_, refer| {
+            if contains(string!(.method), refer) {
+              check_method = true
+            }
+          }
+          check_status = to_int!(.status) >= 400
+
+          check_method || check_status 
+
+    - name: "dedupe"
+      condition:
+        type: "vrl"
+        source: |
+          true
+  sample_split_access_log_input-2:
+    type: sample
+    inputs:
+    - split_access_log_input-2.sample
+    ratio: 0.2
+    sample_rate_key: ""
+  dedupe_split_access_log_input-2:
+    type: dedupe
+    inputs:
+    - split_access_log_input-2.dedupe
+    cache:
+      num_events: 5000
+    fields:
+      match:
+      - method
+      - status
+      - url
+      - ip
+sinks:
+  console_2:
+    type: console
+    inputs:
+    - split_access_log_input-2.dangerous
+    - sample_split_access_log_input-2
+    - dedupe_split_access_log_input-2
+    target: stdout
+    encoding:
+      codec: json
+  kafka_2:
+    type: kafka
+    inputs:
+    - split_access_log_input-2.dangerous
+    - sample_split_access_log_input-2
+    - dedupe_split_access_log_input-2
+    bootstrap_servers: broker1:29092
+    topic: enrich_2
+    encoding:
+      codec: json
+    buffer:
+      type: disk
+      max_size: 268435490
+      when_full: block

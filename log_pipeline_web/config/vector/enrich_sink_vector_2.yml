@@ -1,0 +1,101 @@
+enrichment_tables:
+  geo_ip_db:
+    type: mmdb
+    path: /data/GeoLite2-City.mmdb
+    locale: en
+  threat_ip_csv:
+    type: file
+    file:
+      encoding:
+        include_headers: true
+        type: csv
+      path: /data/threat_ip.csv
+sources:
+  source_enrich_2:
+    type: kafka
+    bootstrap_servers: broker1:29092
+    group_id: enrich_2
+    topics:
+    - enrich_2
+    auto_offset_reset: earliest
+    acknowledgements:
+      enabled: true
+    decoding:
+      codec: json
+    drain_timeout_ms: 2500
+    fetch_wait_max_ms: 100
+transforms:
+  enrich_access_log_input-2:
+    type: remap
+    inputs:
+    - source_enrich_2
+    drop_on_abort: true
+    source: |
+      for_each(keys(.)) -> |_, key| {
+        if (contains(key, "ip")) {
+          value = get!(., [key])
+          if (is_ipv4(to_string!(value))) {
+            # Enrich Geo IP
+            geo_enrich, _ = get_enrichment_table_record("geo_ip_db", {"ip": value})
+            if (geo_enrich != {}) { 
+              geo_name = "geo_" + key
+              geo_field = {
+                  "country": geo_enrich.country.names.en,
+                  "latitude": geo_enrich.location.latitude,
+                  "longitude": geo_enrich.location.longitude
+              }
+              . = set!(., [geo_name], geo_field)
+            } 
+
+          }
+        }
+      }
+      del(.message_key)
+      del(.offset)
+      del(.partition)
+      del(.topic)
+      del(.source_type)
+      del(.headers)
+  aws_s3_route:
+    type: remap
+    inputs:
+    - enrich_access_log_input-2
+    source: |
+      true
+
+  elasticsearch_route:
+    type: remap
+    inputs:
+    - enrich_access_log_input-2
+    source: |
+      true
+
+  elasticsearch_access_log_input-2:
+    type: remap
+    inputs:
+    - elasticsearch_route
+    source: |
+      del(.message)
+      .log_type == "access_log"
+sinks:
+  sink_elasticsearch_access_log_input-2:
+    type: elasticsearch
+    inputs:
+    - elasticsearch_access_log_input-2
+    endpoint: http://elasticsearch:9200
+    api_version: auto
+    batch:
+      max_events: 10
+      timeout_secs: 10
+    buffer:
+      type: disk
+      max_size: 268435488
+      when_full: block
+    mode: bulk
+    bulk:
+      action: index
+      index: "fff"
+      template_fallback_index: "default_log"
+    distribution:
+      retry_initial_backoff_secs: 1
+      retry_max_duration_secs: 3600

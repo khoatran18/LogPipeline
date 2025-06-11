@@ -716,111 +716,149 @@ document.addEventListener('click', function(event) {
 });
 
 
-// ĐÂY LÀ HÀM CẦN THAY THẾ TOÀN BỘ TRONG FILE CỦA BẠN
-function togglePipelineRun(pipelineId) {
-  const pipeline = pipelines.find(p => p.id === pipelineId);
-  if (pipeline) {
-    const toggleRunButton = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"] .run-btn, .pipeline-box[data-pipeline-id="${pipelineId}"] .stop-btn`);
+// Logic để xử lý trạng thái Pending và Call API
+function handlePipelineAction(pipelineId, actionType) {
+    const pipeline = pipelines.find(p => p.id === pipelineId);
+    if (!pipeline) return;
 
-    const previousIsRunning = pipeline.isRunning; // Lưu trạng thái hiện tại để có thể rollback
+    const actionButton = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"] .pipeline-controls .${actionType === 'delete' ? 'cancel-btn' : (actionType === 'start' ? 'run-btn' : 'stop-btn')}`);
 
-    // 1. Kích hoạt trạng thái pending ngay lập tức
-    if (toggleRunButton) {
-      toggleRunButton.classList.add('pending-btn'); // Thêm class màu vàng
-      toggleRunButton.disabled = true; // Vô hiệu hóa nút để tránh click nhiều lần
-      toggleRunButton.textContent = 'Đang xử lý...'; // Thay đổi văn bản hiển thị
+    // Lưu trạng thái ban đầu của nút và pipeline để có thể khôi phục
+    const originalPipelines = [...pipelines];
+    const previousIsRunning = pipeline.isRunning;
+
+    // Đặt trạng thái pending ngay lập tức
+    if (actionButton) {
+        actionButton.classList.add('pending-btn');
+        actionButton.disabled = true;
+        actionButton.textContent = 'Pending...';
     }
 
-    // Cập nhật UI tạm thời để thể hiện trạng thái mong muốn (đang chạy/đã dừng)
-    // Điều này làm cho UI phản hồi nhanh hơn ngay cả trước khi backend xác nhận
-    pipeline.isRunning = !pipeline.isRunning;
-    renderAllPipelines(); // Render lại để cập nhật trạng thái hiển thị (ví dụ: viền xanh/đỏ)
+    // Cập nhật UI tạm thời nếu là start/stop
+    if (actionType === 'start') {
+        pipeline.isRunning = true;
+    } else if (actionType === 'stop') {
+        pipeline.isRunning = false;
+    } else if (actionType === 'delete') {
+        // Nếu xóa, xóa khỏi mảng ngay để phản hồi nhanh
+        pipelines = pipelines.filter(p => p.id !== pipelineId);
+    }
+    // renderAllPipelines();
 
-    // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động và nút được nhấp
+    // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động
     const targetPipelineBox = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"]`);
     if (targetPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
         targetPipelineBox.classList.remove('collapsed');
+    } else if (actionType === 'delete') {
+        // Nếu là delete, và pipeline đó đang mở, đóng nó lại
+        if (activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
+            activePipelineBox = null;
+        }
     }
 
-    // Bắt đầu thời gian chờ tối thiểu (ví dụ: 2 giây)
+
     const minDelay = 2000; // 2 giây
     const startTime = Date.now();
 
     fetch('/vector-action', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-          action: pipeline.isRunning ? 'start' : 'stop',
-          pipelineId: pipeline.id,
-          fullPipelineConfig: pipeline
-      }),
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: actionType,
+            pipelineId: pipelineId,
+            fullPipelineConfig: pipeline // Gửi toàn bộ cấu hình pipeline
+        }),
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            // Nếu phản hồi không thành công (ví dụ: HTTP status 4xx, 5xx)
+            throw new Error('Network response was not ok.');
+        }
+        return response.json();
+    })
     .then(data => {
-      const endTime = Date.now();
-      const elapsedTime = endTime - startTime;
-      const remainingDelay = Math.max(0, minDelay - elapsedTime); // Tính thời gian còn lại để đạt 2s
+        const endTime = Date.now();
+        const elapsedTime = endTime - startTime;
+        const remainingDelay = Math.max(0, minDelay - elapsedTime);
 
-      setTimeout(() => {
-        // 2. Loại bỏ trạng thái pending và kích hoạt lại nút sau khi fetch hoàn tất và thời gian chờ tối thiểu
-        if (toggleRunButton) {
-          toggleRunButton.classList.remove('pending-btn'); // Xóa class màu vàng
-          toggleRunButton.disabled = false; // Kích hoạt lại nút
-        }
-        // Render lại để đảm bảo trạng thái cuối cùng là chính xác (trong trường hợp backend lỗi hoặc để nhất quán)
-        renderAllPipelines(); // Điều này cũng sẽ cập nhật lại văn bản nút thành "Run" hoặc "Stop"
+        setTimeout(() => {
+            // Loại bỏ trạng thái pending và kích hoạt lại nút
+            if (actionButton) {
+                actionButton.classList.remove('pending-btn');
+                actionButton.disabled = false;
+            }
 
-        // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động sau khi có phản hồi từ backend
-        if (targetPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
-            targetPipelineBox.classList.remove('collapsed');
-        }
+            if (data.status === 'error') {
+                alert('Failed to ' + actionType + ' pipeline on server: ' + data.message + '\nDetails: ' + (data.details ? JSON.stringify(data.details, null, 2) : ''));
+                // Khôi phục trạng thái UI nếu backend báo lỗi
+                if (actionType === 'start' || actionType === 'stop') {
+                    pipeline.isRunning = previousIsRunning;
+                } else if (actionType === 'delete') {
+                    pipelines = originalPipelines; // Khôi phục lại pipeline đã xóa trên UI
+                }
+                renderAllPipelines();
+            } else {
+                console.log('Pipeline ' + actionType + ' successfully on server:', data.message);
+                // UI đã được cập nhật ở trên nếu thành công, chỉ cần render lại để đảm bảo trạng thái cuối cùng
+                renderAllPipelines();
+            }
 
-        // Tùy chọn: Nếu backend báo lỗi và bạn muốn khôi phục lại UI
-        // if (data.status === 'error') {
-        //     alert('Failed to update pipeline status on server: ' + data.message);
-        //     pipeline.isRunning = previousIsRunning; // Khôi phục trạng thái UI
-        //     renderAllPipelines(); // Render lại để phản ánh trạng thái đã khôi phục
-        // }
-      }, remainingDelay); // Chờ đủ thời gian còn lại
+            // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động
+            const currentPipelineBox = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"]`);
+            if (currentPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
+                currentPipelineBox.classList.remove('collapsed');
+            } else if (actionType === 'delete' && data.status === 'success') {
+                // Nếu xóa thành công, không cần activePipelineBox nữa
+                activePipelineBox = null;
+            }
+        }, remainingDelay);
     })
     .catch((error) => {
-      console.error('Lỗi khi gửi trạng thái pipeline đến backend:', error);
-      alert('Lỗi mạng hoặc sự cố máy chủ. Không thể cập nhật trạng thái pipeline.');
-      // Khôi phục UI nếu có lỗi mạng
-      pipeline.isRunning = previousIsRunning; // Quan trọng: Khôi phục lại trạng thái UI nếu có lỗi
-      renderAllPipelines(); // Render lại để phản ánh trạng thái đã khôi phục
+        console.error('Error during pipeline action (' + actionType + '):', error);
+        alert('Network error or server issue. Could not ' + actionType + ' pipeline.');
 
-      const endTime = Date.now();
-      const elapsedTime = endTime - startTime;
-      const remainingDelay = Math.max(0, minDelay - elapsedTime);
+        // Khôi phục UI nếu có lỗi mạng
+        if (actionType === 'start' || actionType === 'stop') {
+            pipeline.isRunning = previousIsRunning;
+        } else if (actionType === 'delete') {
+            pipelines = originalPipelines; // Khôi phục lại pipeline đã xóa trên UI
+        }
+        // renderAllPipelines();
 
-      setTimeout(() => {
-        // Loại bỏ trạng thái pending và kích hoạt lại nút ngay cả khi có lỗi
-        if (toggleRunButton) {
-          toggleRunButton.classList.remove('pending-btn');
-          toggleRunButton.disabled = false; // Kích hoạt lại nút
-        }
-        // Đảm bảo hộp pipeline vẫn mở nếu nó đang hoạt động sau khi có lỗi
-        if (targetPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
-            targetPipelineBox.classList.remove('collapsed');
-        }
-      }, remainingDelay);
+        const endTime = Date.now();
+        const elapsedTime = endTime - startTime;
+        const remainingDelay = Math.max(0, minDelay - elapsedTime);
+
+        setTimeout(() => {
+            if (actionButton) {
+                actionButton.classList.remove('pending-btn');
+                actionButton.disabled = false;
+            }
+            const currentPipelineBox = document.querySelector(`.pipeline-box[data-pipeline-id="${pipelineId}"]`);
+            if (currentPipelineBox && activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
+                currentPipelineBox.classList.remove('collapsed');
+            }
+        }, remainingDelay);
+        renderAllPipelines(); //
     });
-  }
+}
+
+
+function togglePipelineRun(pipelineId) {
+    const pipeline = pipelines.find(p => p.id === pipelineId);
+    if (pipeline) {
+        // Determine the action type based on current isRunning state
+        const actionType = pipeline.isRunning ? 'stop' : 'start';
+        handlePipelineAction(pipelineId, actionType);
+    }
 }
 
 function deletePipeline(pipelineId) {
-  if (confirm(`Are you sure you want to delete Pipeline ID: ${pipelineId}?`)) {
-    pipelines = pipelines.filter(p => p.id !== pipelineId);
-    renderAllPipelines();
-    // Nếu pipeline bị xóa là pipeline đang hoạt động, reset activePipelineBox
-    if (activePipelineBox && activePipelineBox.dataset.pipelineId === pipelineId.toString()) {
-        activePipelineBox = null;
-    }
-  }
+    handlePipelineAction(pipelineId, 'delete');
 }
+
 
 function showSection(sectionId, menuId) {
   const sections = document.querySelectorAll('.section');

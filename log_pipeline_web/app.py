@@ -19,9 +19,10 @@ def serve_index():
 def handle_vector_action():
     data = request.get_json()
     print(data)
-    outline_yaml.main_create_yaml_file(data, "config/vector")
+    outline_yaml.main_create_yaml_file(data, vector_config_folder)
     docker_container.run_container(data, vector_config_folder)
     return jsonify({"status": "success", "message": f"{data['action']} received"})
+
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ def run_container(data, folder_path):
                    ]
         elif (data['action'] == 'stop'):
             cmd = ["docker", "stop", container_name]
-            cmd = ["docker", "rm", "-f", container_name]
+            # cmd = ["docker", "rm", "-f", container_name]
         elif (data['action'] == 'restart'):
             cmd = ["docker", "restart", container_name]
         elif (data['action'] == 'delete'):

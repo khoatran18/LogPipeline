@@ -33,3 +33,5 @@ build/
 .vscode/
 docker/minio
 docker/clickhouse
+*.pyc
+log_pipeline_web/__pycache__/*
