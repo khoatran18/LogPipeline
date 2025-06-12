@@ -140,7 +140,8 @@ public class AccessLogGenerator {
     public static void main(String[] args) {
         AccessLogGenerator generator = new AccessLogGenerator();
 //        for (int i = 0; i < 50; i++) {
-//            System.out.println("1.119.161.42 - - [27/05/2025:14:06:39 +0700] \"GET /api/v2/users HTTP/2.0\" 404 950 \"Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101\" \"-\"");
+//            String log = generator.generateLog();
+//            System.out.println(log);
 //        }
 
         ProducerFactory factory = new ProducerFactory();

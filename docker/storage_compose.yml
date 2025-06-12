@@ -37,8 +37,8 @@ services:
       MINIO_ROOT_PASSWORD: minio123
     networks:
       - log-pipeline-net
-    volumes:
-      - ./minio/data:/data
+#    volumes:
+#      - ./minio/data:/data
     command: server --console-address ":9001" /data
 
 #  clickhouse:
