@@ -37,6 +37,23 @@ public class CiscoLogGenerator {
             "%ASA-7-610002: Packet dropped: failed inspection"
     };
 
+    private static final String[] threatIPs = {"1.14.155.39",
+            "1.15.148.9",
+            "1.15.80.32",
+            "1.162.225.116",
+            "1.162.235.166",
+            "1.180.189.210",
+            "1.180.97.138",
+            "1.183.3.58",
+            "1.189.209.19",
+            "1.189.39.138",
+            "1.193.163.2",
+            "1.194.238.148",
+            "1.197.78.123",
+            "1.202.223.2",
+            "1.202.8.212",
+            "1.212.225.99"};
+
     enum AsaEventType {
         CONNECTION_BUILD("302013", 6),
         CONNECTION_TEARDOWN("302014", 6),
@@ -55,10 +72,20 @@ public class CiscoLogGenerator {
 
     //////////////////////////////////////// For getting values ////////////////////////////////////////
 
+//    public String getIp(String zone) {
+//        return zone.equals("outside")
+//                ? faker.internet().ipV4Address()
+//                : "192.168." + rand.nextInt(256) + "." + rand.nextInt(256);
+//    }
+
     public String getIp(String zone) {
-        return zone.equals("outside")
-                ? faker.internet().ipV4Address()
-                : "192.168." + rand.nextInt(256) + "." + rand.nextInt(256);
+        if (zone.equals("outside")) {
+            if (rand.nextInt(2) == 0) {
+                return threatIPs[rand.nextInt(threatIPs.length)];
+            }
+            return faker.internet().ipV4Address();
+        }
+        return "192.168." + rand.nextInt(256) + "." + rand.nextInt(256);
     }
 
     public int getPort() {

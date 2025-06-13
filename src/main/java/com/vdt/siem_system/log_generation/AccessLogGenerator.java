@@ -26,6 +26,22 @@ public class AccessLogGenerator {
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+7"));
     }
 
+    private static final String[] threatIPs = {"1.14.155.39",
+                                        "1.15.148.9",
+                                        "1.15.80.32",
+                                        "1.162.225.116",
+                                        "1.162.235.166",
+                                        "1.180.189.210",
+                                        "1.180.97.138",
+                                        "1.183.3.58",
+                                        "1.189.209.19",
+                                        "1.189.39.138",
+                                        "1.193.163.2",
+                                        "1.194.238.148",
+                                        "1.197.78.123",
+                                        "1.202.223.2",
+                                        "1.202.8.212",
+                                        "1.212.225.99"};
 
     //////////////////////////////////////// For Array of Values ////////////////////////////////////////
 
@@ -74,6 +90,9 @@ public class AccessLogGenerator {
     //////////////////////////////////////// For getting values ////////////////////////////////////////
 
     public String generateIp() {
+        if (rand.nextInt(2) == 0) {
+            return threatIPs[rand.nextInt(threatIPs.length)];
+        }
         return faker.internet().ipV4Address();
         // return "2.119.161.42";
     }
@@ -148,7 +167,7 @@ public class AccessLogGenerator {
         try (Producer<String, String> producer = factory.createProducer(StringSerializer.class, StringSerializer.class)) {
             String topic = "access_log";
             producer.partitionsFor(topic);
-            for(int i = 0; i < 10000; i++) {
+            for(int i = 0; i < 1000; i++) {
                 // String log = "1.119.161.42 - - [27/05/2025:14:06:39 +0700] \"GET /api/v2/users HTTP/2.0\" 200 950 \"Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101\" \"-\"";
                 String log = generator.generateLog();
                 System.out.println(log);

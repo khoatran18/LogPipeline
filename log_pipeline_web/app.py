@@ -1,9 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-# import create_yaml_file
 import docker_container
-import subprocess
-import os
 import outline_yaml
 
 vector_config_folder = "config/vector"
@@ -22,7 +19,6 @@ def handle_vector_action():
     outline_yaml.main_create_yaml_file(data, vector_config_folder)
     docker_container.run_container(data, vector_config_folder)
     return jsonify({"status": "success", "message": f"{data['action']} received"})
-
 
 
 if __name__ == "__main__":
