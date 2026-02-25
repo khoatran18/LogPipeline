@@ -34,12 +34,9 @@ Logs can be routed simultaneously to multiple targets such as:
 
 Routing rules can be configured based on log source, content, or custom conditions.
 
----
-
 ### 2. Data Normalization & Transformation
 The pipeline standardizes heterogeneous log formats into structured schemas, ensuring compatibility with downstream analytics and monitoring systems.
 
----
 
 ### 3. Data Optimization
 To reduce storage and processing overhead, the system provides:
@@ -50,7 +47,6 @@ To reduce storage and processing overhead, the system provides:
 
 These mechanisms improve signal quality while maintaining important events.
 
----
 
 ### 4. Enrichment
 Logs can be enriched with external context to increase analytical value, including:
@@ -59,7 +55,6 @@ Logs can be enriched with external context to increase analytical value, includi
 - Threat intelligence feeds  
 - Metadata augmentation  
 
----
 
 ### 5. Processing Management
 The system supports operational visibility and control through:
@@ -109,3 +104,4 @@ This modular design enables independent scaling and flexible deployment.
 ## Outcome
 
 The system provides a reliable foundation for handling large-scale log data, improving both operational visibility and security insights while optimizing storage and processing efficiency.
+
